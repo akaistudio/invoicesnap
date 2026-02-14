@@ -557,7 +557,9 @@ def download_pdf(invoice_id):
 def generate_pdf(user, invoice, items):
     from fpdf import FPDF
 
-    curr = get_curr_symbol(invoice['currency'])
+    # Use ASCII-safe currency symbols for PDF
+    pdf_curr_map = {'CAD': 'C$', 'INR': 'Rs.', 'EUR': 'EUR ', 'USD': '$', 'GBP': 'GBP '}
+    curr = pdf_curr_map.get(invoice.get('currency', 'CAD'), '$')
     brand = user.get('brand_color', '#2563eb') or '#2563eb'
     # Convert hex to RGB
     br = int(brand[1:3], 16)
@@ -583,11 +585,12 @@ def generate_pdf(user, invoice, items):
     pdf.set_font('Helvetica', '', 9)
     pdf.set_text_color(100, 100, 100)
     if user.get('company_address'):
-        pdf.cell(0, 5, user['company_address'], ln=True)
+        for line in str(user['company_address']).split('\n'):
+            pdf.cell(0, 5, line, ln=True)
     if user.get('company_email'):
-        pdf.cell(0, 5, user['company_email'], ln=True)
+        pdf.cell(0, 5, str(user['company_email']), ln=True)
     if user.get('company_phone'):
-        pdf.cell(0, 5, user['company_phone'], ln=True)
+        pdf.cell(0, 5, str(user['company_phone']), ln=True)
     if user.get('tax_reg_number'):
         pdf.set_font('Helvetica', 'B', 9)
         pdf.cell(0, 5, f"{user.get('tax_reg_label', 'VAT No.')}: {user['tax_reg_number']}", ln=True)
@@ -623,12 +626,12 @@ def generate_pdf(user, invoice, items):
     pdf.cell(0, 6, 'BILL TO:', ln=True)
     pdf.set_font('Helvetica', '', 10)
     pdf.set_text_color(40, 40, 40)
-    pdf.cell(0, 5, invoice['client_name'], ln=True)
+    pdf.cell(0, 5, str(invoice.get('client_name', '')), ln=True)
     if invoice.get('client_address'):
-        for line in invoice['client_address'].split('\n'):
+        for line in str(invoice['client_address']).split('\n'):
             pdf.cell(0, 5, line, ln=True)
     if invoice.get('client_email'):
-        pdf.cell(0, 5, invoice['client_email'], ln=True)
+        pdf.cell(0, 5, str(invoice['client_email']), ln=True)
     if invoice.get('client_tax_id'):
         pdf.set_font('Helvetica', 'B', 9)
         pdf.cell(0, 5, f"Tax ID: {invoice['client_tax_id']}", ln=True)
@@ -654,10 +657,14 @@ def generate_pdf(user, invoice, items):
         fill = i % 2 == 0
         if fill:
             pdf.set_fill_color(245, 247, 250)
-        pdf.cell(90, 7, f" {item['description'][:50]}", border=0, fill=fill)
-        pdf.cell(25, 7, f"{item['quantity']:.0f}" if item['quantity'] == int(item['quantity']) else f"{item['quantity']:.2f}", border=0, fill=fill, align='C')
-        pdf.cell(35, 7, f"{curr}{item['unit_price']:,.2f}", border=0, fill=fill, align='R')
-        pdf.cell(35, 7, f"{curr}{item['amount']:,.2f}", border=0, fill=fill, align='R')
+        desc = str(item.get('description', ''))[:50]
+        qty = float(item.get('quantity', 1) or 1)
+        price = float(item.get('unit_price', 0) or 0)
+        amt = float(item.get('amount', 0) or 0)
+        pdf.cell(90, 7, f" {desc}", border=0, fill=fill)
+        pdf.cell(25, 7, f"{qty:.0f}" if qty == int(qty) else f"{qty:.2f}", border=0, fill=fill, align='C')
+        pdf.cell(35, 7, f"{curr}{price:,.2f}", border=0, fill=fill, align='R')
+        pdf.cell(35, 7, f"{curr}{amt:,.2f}", border=0, fill=fill, align='R')
         pdf.ln()
 
     # Totals section
@@ -669,18 +676,18 @@ def generate_pdf(user, invoice, items):
         pdf.set_font('Helvetica', 'B' if bold else '', 10)
         pdf.set_x(x_label)
         pdf.cell(35, 6, label, align='R')
-        pdf.cell(35, 6, f"{curr}{value:,.2f}", align='R', ln=True)
+        pdf.cell(35, 6, f"{curr}{float(value or 0):,.2f}", align='R', ln=True)
 
-    add_total_line('Subtotal:', invoice['subtotal'])
+    add_total_line('Subtotal:', float(invoice.get('subtotal', 0) or 0))
 
-    if invoice.get('discount_amount') and invoice['discount_amount'] > 0:
-        add_total_line(f"Discount ({invoice['discount_percent']:.0f}%):", -invoice['discount_amount'])
+    if float(invoice.get('discount_amount', 0) or 0) > 0:
+        add_total_line(f"Discount ({float(invoice.get('discount_percent', 0) or 0):.0f}%):", -float(invoice['discount_amount']))
 
-    if invoice.get('tax_1_amount') and invoice['tax_1_amount'] > 0:
-        add_total_line(f"{invoice['tax_1_label']} ({invoice['tax_1_rate']:.1f}%):", invoice['tax_1_amount'])
+    if float(invoice.get('tax_1_amount', 0) or 0) > 0:
+        add_total_line(f"{invoice.get('tax_1_label', '')} ({float(invoice.get('tax_1_rate', 0) or 0):.1f}%):", float(invoice['tax_1_amount']))
 
-    if invoice.get('tax_2_amount') and invoice['tax_2_amount'] > 0:
-        add_total_line(f"{invoice['tax_2_label']} ({invoice['tax_2_rate']:.1f}%):", invoice['tax_2_amount'])
+    if float(invoice.get('tax_2_amount', 0) or 0) > 0:
+        add_total_line(f"{invoice.get('tax_2_label', '')} ({float(invoice.get('tax_2_rate', 0) or 0):.1f}%):", float(invoice['tax_2_amount']))
 
     # Total with line
     pdf.set_draw_color(br, bg, bb)
@@ -691,7 +698,7 @@ def generate_pdf(user, invoice, items):
     pdf.set_text_color(br, bg, bb)
     pdf.set_x(x_label)
     pdf.cell(35, 8, 'TOTAL:', align='R')
-    pdf.cell(35, 8, f"{curr}{invoice['total']:,.2f}", align='R', ln=True)
+    pdf.cell(35, 8, f"{curr}{float(invoice.get('total', 0) or 0):,.2f}", align='R', ln=True)
 
     # Bank details
     if user.get('bank_details'):
