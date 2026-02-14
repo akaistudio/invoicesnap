@@ -4,39 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InvoiceSnap — Scan Invoice</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f0f4f8; min-height: 100vh; }
-        .topbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-        .topbar h1 { font-size: 20px; font-weight: 700; color: #1e293b; }
-        .topbar h1 span { color: #2563eb; }
-        .topbar a { font-size: 13px; color: #64748b; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
-        .topbar a:hover { background: #f1f5f9; }
+        body { font-family: 'DM Sans', sans-serif; background: #0B0F1A; min-height: 100vh; }
+        .topbar { background: #141926; border-bottom: 1px solid #2A3148; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .topbar h1 { font-size: 20px; font-weight: 700; color: #E8ECF4; }
+        .topbar h1 span { color: #3B82F6; }
+        .topbar a { font-size: 13px; color: #8B95B0; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
+        .topbar a:hover { background: #2A3148; }
         .main { max-width: 600px; margin: 0 auto; padding: 24px; }
-        h2 { font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
-        .subtitle { color: #64748b; font-size: 14px; margin-bottom: 24px; }
-        .card { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+        h2 { font-size: 22px; font-weight: 700; color: #E8ECF4; margin-bottom: 8px; }
+        .subtitle { color: #8B95B0; font-size: 14px; margin-bottom: 24px; }
+        .card { background: #141926; border-radius: 12px; padding: 32px;  }
         .upload-zone { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 48px 24px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
-        .upload-zone:hover, .upload-zone.dragover { border-color: #2563eb; background: #eff6ff; }
+        .upload-zone:hover, .upload-zone.dragover { border-color: #3B82F6; background: #eff6ff; }
         .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
         .upload-icon { font-size: 48px; margin-bottom: 12px; }
-        .upload-zone h3 { font-size: 16px; color: #374151; margin-bottom: 6px; }
-        .upload-zone p { font-size: 13px; color: #94a3b8; }
-        .file-preview { display: none; margin-top: 20px; padding: 16px; background: #f8fafc; border-radius: 10px; }
+        .upload-zone h3 { font-size: 16px; color: #E8ECF4; margin-bottom: 6px; }
+        .upload-zone p { font-size: 13px; color: #8B95B0; }
+        .file-preview { display: none; margin-top: 20px; padding: 16px; background: #0B0F1A; border-radius: 10px; }
         .file-preview .file-info { display: flex; align-items: center; gap: 12px; }
         .file-preview .file-icon { font-size: 32px; }
-        .file-preview .file-name { font-weight: 600; color: #374151; font-size: 14px; }
-        .file-preview .file-size { color: #94a3b8; font-size: 12px; }
-        .btn { width: 100%; padding: 13px; background: #2563eb; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; margin-top: 20px; display: none; }
+        .file-preview .file-name { font-weight: 600; color: #E8ECF4; font-size: 14px; }
+        .file-preview .file-size { color: #8B95B0; font-size: 12px; }
+        .btn { width: 100%; padding: 13px; background: #3B82F6; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; margin-top: 20px; display: none; }
         .btn:hover { background: #1d4ed8; }
         .btn:disabled { background: #94a3b8; cursor: not-allowed; }
         .loading { display: none; text-align: center; padding: 32px; }
-        .loading .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
-        .loading p { color: #64748b; font-size: 14px; }
+        .loading .spinner { width: 40px; height: 40px; border: 4px solid #2A3148; border-top-color: #3B82F6; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+        .loading p { color: #8B95B0; font-size: 14px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .flash { padding: 12px 16px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
-        .flash.error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .flash.error { background: rgba(248,113,113,.1); color: #F87171; border: 1px solid rgba(248,113,113,.2); }
     </style>
 </head>
 <body>

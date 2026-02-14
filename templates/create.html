@@ -4,54 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InvoiceSnap — New Invoice</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f0f4f8; min-height: 100vh; }
-        .topbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-        .topbar h1 { font-size: 20px; font-weight: 700; color: #1e293b; }
-        .topbar h1 span { color: #2563eb; }
-        .topbar a { font-size: 13px; color: #64748b; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
-        .topbar a:hover { background: #f1f5f9; }
+        body { font-family: 'DM Sans', sans-serif; background: #0B0F1A; min-height: 100vh; }
+        .topbar { background: #141926; border-bottom: 1px solid #2A3148; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .topbar h1 { font-size: 20px; font-weight: 700; color: #E8ECF4; }
+        .topbar h1 span { color: #3B82F6; }
+        .topbar a { font-size: 13px; color: #8B95B0; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
+        .topbar a:hover { background: #2A3148; }
         .main { max-width: 800px; margin: 0 auto; padding: 24px; }
-        h2 { font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 20px; }
-        .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 20px; }
-        .card h3 { font-size: 15px; font-weight: 700; color: #374151; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+        h2 { font-size: 22px; font-weight: 700; color: #E8ECF4; margin-bottom: 20px; }
+        .card { background: #141926; border-radius: 12px; padding: 24px;  margin-bottom: 20px; }
+        .card h3 { font-size: 15px; font-weight: 700; color: #E8ECF4; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
         .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; }
-        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #E8ECF4; margin-bottom: 5px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1.5px solid #2A3148; border-radius: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #3B82F6;  }
         .form-group textarea { resize: vertical; min-height: 70px; }
         .items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-        .items-table th { text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; padding: 8px 6px; }
+        .items-table th { text-align: left; font-size: 12px; font-weight: 600; color: #8B95B0; text-transform: uppercase; padding: 8px 6px; }
         .items-table td { padding: 4px 6px; }
-        .items-table input { width: 100%; padding: 9px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; }
-        .items-table input:focus { outline: none; border-color: #2563eb; }
+        .items-table input { width: 100%; padding: 9px 10px; border: 1.5px solid #2A3148; border-radius: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif; }
+        .items-table input:focus { outline: none; border-color: #3B82F6; }
         .items-table .col-desc { width: 45%; }
         .items-table .col-qty { width: 12%; }
         .items-table .col-price { width: 18%; }
         .items-table .col-amount { width: 18%; }
         .items-table .col-del { width: 7%; }
-        .add-item { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #eff6ff; color: #2563eb; border: 1px dashed #93c5fd; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .add-item { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #eff6ff; color: #3B82F6; border: 1px dashed #93c5fd; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .add-item:hover { background: #dbeafe; }
         .del-btn { background: none; border: none; color: #ef4444; font-size: 18px; cursor: pointer; padding: 6px; border-radius: 6px; }
-        .del-btn:hover { background: #fef2f2; }
+        .del-btn:hover { background: rgba(248,113,113,.1); }
         .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
         .total-row { display: flex; align-items: center; gap: 16px; font-size: 14px; }
-        .total-row .label { color: #64748b; min-width: 120px; text-align: right; }
-        .total-row .value { font-weight: 600; color: #1e293b; min-width: 100px; text-align: right; }
+        .total-row .label { color: #8B95B0; min-width: 120px; text-align: right; }
+        .total-row .value { font-weight: 600; color: #E8ECF4; min-width: 100px; text-align: right; }
         .total-row.grand { font-size: 18px; padding-top: 8px; border-top: 2px solid #2563eb; }
-        .total-row.grand .value { color: #2563eb; }
+        .total-row.grand .value { color: #3B82F6; }
         .tax-row { display: grid; grid-template-columns: 1fr 100px; gap: 12px; align-items: end; }
-        .btn { padding: 13px 28px; background: #2563eb; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+        .btn { padding: 13px 28px; background: #3B82F6; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; }
         .btn:hover { background: #1d4ed8; }
-        .btn-secondary { background: #f1f5f9; color: #374151; }
-        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-secondary { background: #2A3148; color: #E8ECF4; }
+        .btn-secondary:hover { background: #2A3148; }
         .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
-        .client-suggest { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; display: none; }
+        .client-suggest { position: absolute; top: 100%; left: 0; right: 0; background: #141926; border: 1px solid #2A3148; border-radius: 8px;  z-index: 10; display: none; }
         .client-suggest div { padding: 10px 12px; cursor: pointer; font-size: 14px; }
-        .client-suggest div:hover { background: #f1f5f9; }
+        .client-suggest div:hover { background: #2A3148; }
         .client-wrapper { position: relative; }
         @media (max-width: 768px) { .row { grid-template-columns: 1fr; } }
     </style>
@@ -141,20 +141,20 @@
                     </div>
                     <div class="total-row">
                         <span class="label">Discount (%):</span>
-                        <span class="value"><input type="number" name="discount_percent" value="0" min="0" max="100" step="0.1" style="width:70px;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:6px;text-align:right;font-size:14px;" onchange="calcTotals()"></span>
+                        <span class="value"><input type="number" name="discount_percent" value="0" min="0" max="100" step="0.1" style="width:70px;padding:6px 8px;border:1.5px solid #2A3148;border-radius:6px;text-align:right;font-size:14px;" onchange="calcTotals()"></span>
                     </div>
                     <div class="total-row">
                         <span class="label">
-                            <input type="text" name="tax_1_label" value="{{ user.tax_label }}" style="width:60px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:center;">
-                            (<input type="number" name="tax_1_rate" value="{{ user.tax_rate }}" min="0" max="100" step="0.1" style="width:55px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:right;" onchange="calcTotals()">%):
+                            <input type="text" name="tax_1_label" value="{{ user.tax_label }}" style="width:60px;padding:4px 6px;border:1.5px solid #2A3148;border-radius:6px;font-size:13px;text-align:center;">
+                            (<input type="number" name="tax_1_rate" value="{{ user.tax_rate }}" min="0" max="100" step="0.1" style="width:55px;padding:4px 6px;border:1.5px solid #2A3148;border-radius:6px;font-size:13px;text-align:right;" onchange="calcTotals()">%):
                         </span>
                         <span class="value" id="tax1Amount">{{ curr }}0.00</span>
                     </div>
                     {% if user.tax_label_2 %}
                     <div class="total-row">
                         <span class="label">
-                            <input type="text" name="tax_2_label" value="{{ user.tax_label_2 }}" style="width:60px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:center;">
-                            (<input type="number" name="tax_2_rate" value="{{ user.tax_rate_2 }}" min="0" max="100" step="0.1" style="width:55px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:right;" onchange="calcTotals()">%):
+                            <input type="text" name="tax_2_label" value="{{ user.tax_label_2 }}" style="width:60px;padding:4px 6px;border:1.5px solid #2A3148;border-radius:6px;font-size:13px;text-align:center;">
+                            (<input type="number" name="tax_2_rate" value="{{ user.tax_rate_2 }}" min="0" max="100" step="0.1" style="width:55px;padding:4px 6px;border:1.5px solid #2A3148;border-radius:6px;font-size:13px;text-align:right;" onchange="calcTotals()">%):
                         </span>
                         <span class="value" id="tax2Amount">{{ curr }}0.00</span>
                     </div>

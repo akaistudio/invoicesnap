@@ -4,39 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InvoiceSnap — Scan Result</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f0f4f8; min-height: 100vh; }
-        .topbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-        .topbar h1 { font-size: 20px; font-weight: 700; color: #1e293b; }
-        .topbar h1 span { color: #2563eb; }
-        .topbar a { font-size: 13px; color: #64748b; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
+        body { font-family: 'DM Sans', sans-serif; background: #0B0F1A; min-height: 100vh; }
+        .topbar { background: #141926; border-bottom: 1px solid #2A3148; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .topbar h1 { font-size: 20px; font-weight: 700; color: #E8ECF4; }
+        .topbar h1 span { color: #3B82F6; }
+        .topbar a { font-size: 13px; color: #8B95B0; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
         .main { max-width: 800px; margin: 0 auto; padding: 24px; }
-        h2 { font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
-        .subtitle { color: #64748b; font-size: 14px; margin-bottom: 24px; }
-        .success-bar { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        .success-bar span { font-size: 14px; color: #16a34a; font-weight: 500; }
-        .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 20px; }
-        .card h3 { font-size: 15px; font-weight: 700; color: #374151; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+        h2 { font-size: 22px; font-weight: 700; color: #E8ECF4; margin-bottom: 8px; }
+        .subtitle { color: #8B95B0; font-size: 14px; margin-bottom: 24px; }
+        .success-bar { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.2); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .success-bar span { font-size: 14px; color: #4ADE80; font-weight: 500; }
+        .card { background: #141926; border-radius: 12px; padding: 24px;  margin-bottom: 20px; }
+        .card h3 { font-size: 15px; font-weight: 700; color: #E8ECF4; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
         .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; }
-        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #2563eb; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #E8ECF4; margin-bottom: 5px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #2A3148; border-radius: 8px; font-size: 14px; font-family: 'DM Sans', sans-serif; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #3B82F6; }
         .items-list { margin-bottom: 12px; }
         .item-row { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        .item-row.header { font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; }
+        .item-row.header { font-weight: 600; color: #8B95B0; font-size: 12px; text-transform: uppercase; }
         .total-section { text-align: right; padding-top: 12px; }
-        .total-line { font-size: 14px; color: #64748b; margin-bottom: 4px; }
-        .total-line strong { color: #1e293b; }
-        .total-grand { font-size: 20px; font-weight: 700; color: #2563eb; margin-top: 8px; }
+        .total-line { font-size: 14px; color: #8B95B0; margin-bottom: 4px; }
+        .total-line strong { color: #E8ECF4; }
+        .total-grand { font-size: 20px; font-weight: 700; color: #3B82F6; margin-top: 8px; }
         .actions { display: flex; justify-content: flex-end; gap: 12px; }
-        .btn { padding: 13px 28px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; text-decoration: none; display: inline-block; }
-        .btn-primary { background: #2563eb; color: #fff; }
+        .btn { padding: 13px 28px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: none; display: inline-block; }
+        .btn-primary { background: #3B82F6; color: #fff; }
         .btn-primary:hover { background: #1d4ed8; }
-        .btn-secondary { background: #f1f5f9; color: #374151; }
-        .btn-secondary:hover { background: #e2e8f0; }
+        .btn-secondary { background: #2A3148; color: #E8ECF4; }
+        .btn-secondary:hover { background: #2A3148; }
     </style>
 </head>
 <body>
@@ -58,7 +58,7 @@
 
             <div class="card">
                 <h3>From: {{ data.vendor_name or 'Unknown Vendor' }}</h3>
-                <p style="font-size:13px;color:#64748b;margin-top:-10px;margin-bottom:10px;">{{ data.vendor_address or '' }}</p>
+                <p style="font-size:13px;color:#8B95B0;margin-top:-10px;margin-bottom:10px;">{{ data.vendor_address or '' }}</p>
 
                 <div class="row">
                     <div class="form-group">
@@ -81,11 +81,11 @@
                 <div class="row">
                     <div class="form-group">
                         <label>Invoice Number</label>
-                        <input type="text" value="{{ data.invoice_number or '' }}" readonly style="background:#f8fafc;">
+                        <input type="text" value="{{ data.invoice_number or '' }}" readonly style="background:#0B0F1A;">
                     </div>
                     <div class="form-group">
                         <label>Currency</label>
-                        <input type="text" value="{{ data.currency or 'CAD' }}" readonly style="background:#f8fafc;">
+                        <input type="text" value="{{ data.currency or 'CAD' }}" readonly style="background:#0B0F1A;">
                     </div>
                 </div>
                 <div class="row">
