@@ -74,7 +74,7 @@
                         <input type="text" name="client_name" id="clientName" required placeholder="Enter client name" autocomplete="off">
                         <div class="client-suggest" id="clientSuggest">
                             {% for c in clients %}
-                            <div onclick="selectClient('{{ c.name }}', '{{ c.email }}', '{{ c.address | replace('\n', '\\n') }}')">{{ c.name }}</div>
+                            <div onclick="selectClient('{{ c.name }}', '{{ c.email }}', '{{ c.address | replace('\n', '\\n') }}', '{{ c.tax_id or '' }}')">{{ c.name }}</div>
                             {% endfor %}
                         </div>
                     </div>
@@ -83,9 +83,16 @@
                         <input type="email" name="client_email" id="clientEmail" placeholder="client@company.com">
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Client Address</label>
-                    <textarea name="client_address" id="clientAddress" placeholder="Full billing address"></textarea>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Client Address</label>
+                        <textarea name="client_address" id="clientAddress" placeholder="Full billing address"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Client Tax / VAT / GST Number</label>
+                        <input type="text" name="client_tax_id" id="clientTaxId" placeholder="e.g. 27AABCU9603R1ZM">
+                        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">GST No. (India), VAT No. (EU), BN (Canada), TIN, etc.</div>
+                    </div>
                 </div>
             </div>
 
@@ -250,10 +257,11 @@
             suggest.style.display = any ? 'block' : 'none';
         });
 
-        function selectClient(name, email, address) {
+        function selectClient(name, email, address, taxId) {
             document.getElementById('clientName').value = name;
             document.getElementById('clientEmail').value = email;
             document.getElementById('clientAddress').value = address.replace(/\\n/g, '\n');
+            document.getElementById('clientTaxId').value = taxId || '';
             suggest.style.display = 'none';
         }
     </script>

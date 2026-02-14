@@ -47,6 +47,10 @@ def init_db():
         next_invoice_num INTEGER DEFAULT 1001,
         bank_details TEXT DEFAULT '',
         payment_terms TEXT DEFAULT 'Net 30',
+        tax_reg_number TEXT DEFAULT '',
+        tax_reg_label TEXT DEFAULT 'VAT No.',
+        custom_template TEXT DEFAULT '',
+        footer_text TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT NOW()
     )''')
     cur.execute('''CREATE TABLE IF NOT EXISTS invoices (
@@ -57,6 +61,7 @@ def init_db():
         client_email TEXT DEFAULT '',
         client_address TEXT DEFAULT '',
         client_phone TEXT DEFAULT '',
+        client_tax_id TEXT DEFAULT '',
         issue_date DATE NOT NULL,
         due_date DATE NOT NULL,
         status TEXT DEFAULT 'unpaid',
@@ -91,8 +96,27 @@ def init_db():
         email TEXT DEFAULT '',
         address TEXT DEFAULT '',
         phone TEXT DEFAULT '',
+        tax_id TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT NOW()
     )''')
+    conn.close()
+
+    # Migrate: add new columns if they don't exist
+    conn = get_db()
+    cur = conn.cursor()
+    migrations = [
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_reg_number TEXT DEFAULT ''",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS tax_reg_label TEXT DEFAULT 'VAT No.'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_template TEXT DEFAULT ''",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS footer_text TEXT DEFAULT ''",
+        "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS client_tax_id TEXT DEFAULT ''",
+        "ALTER TABLE clients ADD COLUMN IF NOT EXISTS tax_id TEXT DEFAULT ''",
+    ]
+    for m in migrations:
+        try:
+            cur.execute(m)
+        except Exception:
+            pass
     conn.close()
 
 init_db()
@@ -244,6 +268,7 @@ def create_invoice():
         client_name = request.form['client_name']
         client_email = request.form.get('client_email', '')
         client_address = request.form.get('client_address', '')
+        client_tax_id = request.form.get('client_tax_id', '')
         issue_date = request.form['issue_date']
         due_date = request.form['due_date']
         notes = request.form.get('notes', '')
@@ -283,12 +308,12 @@ def create_invoice():
 
         # Save invoice
         cur.execute('''INSERT INTO invoices (user_id, invoice_number, client_name, client_email,
-                      client_address, issue_date, due_date, subtotal, tax_1_label, tax_1_rate,
+                      client_address, client_tax_id, issue_date, due_date, subtotal, tax_1_label, tax_1_rate,
                       tax_1_amount, tax_2_label, tax_2_rate, tax_2_amount, discount_percent,
                       discount_amount, total, currency, notes, source)
-                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                       RETURNING id''',
-                   (user['id'], inv_num, client_name, client_email, client_address,
+                   (user['id'], inv_num, client_name, client_email, client_address, client_tax_id,
                     issue_date, due_date, subtotal, tax_1_label, tax_1_rate, tax_1_amount,
                     tax_2_label, tax_2_rate, tax_2_amount, discount_percent, discount_amount,
                     total, user['currency'], notes, 'manual'))
@@ -302,8 +327,8 @@ def create_invoice():
         # Save client for future use
         cur.execute('SELECT id FROM clients WHERE user_id=%s AND name=%s', (user['id'], client_name))
         if not cur.fetchone():
-            cur.execute('''INSERT INTO clients (user_id, name, email, address)
-                          VALUES (%s,%s,%s,%s)''', (user['id'], client_name, client_email, client_address))
+            cur.execute('''INSERT INTO clients (user_id, name, email, address, tax_id)
+                          VALUES (%s,%s,%s,%s,%s)''', (user['id'], client_name, client_email, client_address, client_tax_id))
 
         conn.close()
         flash(f'Invoice {inv_num} created!', 'success')
@@ -563,6 +588,9 @@ def generate_pdf(user, invoice, items):
         pdf.cell(0, 5, user['company_email'], ln=True)
     if user.get('company_phone'):
         pdf.cell(0, 5, user['company_phone'], ln=True)
+    if user.get('tax_reg_number'):
+        pdf.set_font('Helvetica', 'B', 9)
+        pdf.cell(0, 5, f"{user.get('tax_reg_label', 'VAT No.')}: {user['tax_reg_number']}", ln=True)
 
     # INVOICE title on the right
     pdf.set_y(15)
@@ -601,6 +629,10 @@ def generate_pdf(user, invoice, items):
             pdf.cell(0, 5, line, ln=True)
     if invoice.get('client_email'):
         pdf.cell(0, 5, invoice['client_email'], ln=True)
+    if invoice.get('client_tax_id'):
+        pdf.set_font('Helvetica', 'B', 9)
+        pdf.cell(0, 5, f"Tax ID: {invoice['client_tax_id']}", ln=True)
+        pdf.set_font('Helvetica', '', 10)
 
     # Items table
     pdf.set_y(pdf.get_y() + 10)
@@ -688,7 +720,8 @@ def generate_pdf(user, invoice, items):
     pdf.rect(0, 290, 210, 8, 'F')
     pdf.set_font('Helvetica', '', 7)
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 4, f"Generated by InvoiceSnap  |  {company_name}", align='C')
+    footer = user.get('footer_text', '') or f"Generated by InvoiceSnap  |  {company_name}"
+    pdf.cell(0, 4, footer, align='C')
 
     buffer = BytesIO()
     pdf.output(buffer)
@@ -717,6 +750,9 @@ def settings():
         invoice_prefix = request.form.get('invoice_prefix', 'INV')
         payment_terms = request.form.get('payment_terms', 'Net 30')
         bank_details = request.form.get('bank_details', '')
+        tax_reg_number = request.form.get('tax_reg_number', '')
+        tax_reg_label = request.form.get('tax_reg_label', 'VAT No.')
+        footer_text = request.form.get('footer_text', '')
 
         # Handle logo upload
         logo_data = user.get('logo_data', '')
@@ -727,15 +763,29 @@ def settings():
             media_type = f"image/{'jpeg' if ext in ('jpg','jpeg') else ext}"
             logo_data = f"data:{media_type};base64,{base64.b64encode(img_data).decode()}"
 
+        # Handle custom template upload
+        custom_template = user.get('custom_template', '')
+        template_file = request.files.get('custom_template')
+        if template_file and template_file.filename:
+            tpl_data = template_file.read()
+            ext = template_file.filename.rsplit('.', 1)[-1].lower()
+            if ext == 'pdf':
+                custom_template = f"data:application/pdf;base64,{base64.b64encode(tpl_data).decode()}"
+            elif ext in ('jpg', 'jpeg', 'png'):
+                media_type = f"image/{'jpeg' if ext in ('jpg','jpeg') else ext}"
+                custom_template = f"data:{media_type};base64,{base64.b64encode(tpl_data).decode()}"
+
         cur.execute('''UPDATE users SET company_name=%s, company_address=%s, company_email=%s,
                       company_phone=%s, logo_data=%s, brand_color=%s, currency=%s,
                       tax_label=%s, tax_rate=%s, tax_label_2=%s, tax_rate_2=%s,
-                      invoice_prefix=%s, payment_terms=%s, bank_details=%s
+                      invoice_prefix=%s, payment_terms=%s, bank_details=%s,
+                      tax_reg_number=%s, tax_reg_label=%s, custom_template=%s, footer_text=%s
                       WHERE id=%s''',
                    (company_name, company_address, company_email, company_phone,
                     logo_data, brand_color, currency, tax_label, tax_rate,
                     tax_label_2, tax_rate_2, invoice_prefix, payment_terms,
-                    bank_details, user['id']))
+                    bank_details, tax_reg_number, tax_reg_label, custom_template,
+                    footer_text, user['id']))
         conn.close()
         flash('Settings saved!', 'success')
         return redirect(url_for('settings'))

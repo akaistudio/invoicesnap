@@ -115,6 +115,7 @@
                     {% if user.company_address %}<p>{{ user.company_address }}</p>{% endif %}
                     {% if user.company_email %}<p>{{ user.company_email }}</p>{% endif %}
                     {% if user.company_phone %}<p>{{ user.company_phone }}</p>{% endif %}
+                    {% if user.tax_reg_number %}<p style="font-weight:600;">{{ user.tax_reg_label or 'VAT No.' }}: {{ user.tax_reg_number }}</p>{% endif %}
                 </div>
                 <div class="invoice-meta">
                     <div class="inv-number">{{ invoice.invoice_number }}</div>
@@ -130,6 +131,7 @@
                     <div class="party-name">{{ invoice.client_name }}</div>
                     {% if invoice.client_address %}<div class="party-detail">{{ invoice.client_address }}</div>{% endif %}
                     {% if invoice.client_email %}<div class="party-detail">{{ invoice.client_email }}</div>{% endif %}
+                    {% if invoice.client_tax_id %}<div class="party-detail" style="font-weight:600;">Tax ID: {{ invoice.client_tax_id }}</div>{% endif %}
                 </div>
                 <div style="text-align:right;">
                     <div class="party-label">Payment Terms</div>

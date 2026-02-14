@@ -78,6 +78,22 @@
                         <input type="text" name="company_phone" value="{{ user.company_phone or '' }}" placeholder="+1 555 000 0000">
                     </div>
                 </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Tax Registration Label</label>
+                        <select name="tax_reg_label" style="width:100%">
+                            {% for opt in ['VAT No.', 'GST No.', 'GSTIN', 'CIF', 'NIF', 'Tax ID', 'BN', 'TIN', 'ABN', 'PAN'] %}
+                            <option {% if user.tax_reg_label == opt %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="hint">VAT No. (EU), GSTIN (India), BN (Canada), CIF/NIF (Spain)</div>
+                    </div>
+                    <div class="form-group">
+                        <label>Tax Registration Number</label>
+                        <input type="text" name="tax_reg_number" value="{{ user.tax_reg_number or '' }}" placeholder="e.g. ESB12345678">
+                        <div class="hint">Appears on all your invoices and PDFs</div>
+                    </div>
+                </div>
             </div>
 
             <div class="card">
@@ -99,6 +115,21 @@
                         <input type="text" id="colorText" name="brand_color" value="{{ user.brand_color or '#2563eb' }}" placeholder="#2563eb" onchange="document.getElementById('colorPicker').value=this.value">
                     </div>
                     <div class="hint">Used for invoice headers, accents, and PDF styling.</div>
+                </div>
+                <div class="form-group">
+                    <label>Custom Invoice Template <span style="color:#94a3b8;">(optional)</span></label>
+                    <input type="file" name="custom_template" accept=".pdf,.jpg,.jpeg,.png" style="padding:8px;">
+                    {% if user.custom_template %}
+                    <div style="margin-top:6px;padding:8px 12px;background:#f0fdf4;border-radius:6px;font-size:13px;color:#16a34a;">
+                        ✓ Custom template uploaded — your invoices will use this as the background
+                    </div>
+                    {% endif %}
+                    <div class="hint">Upload your existing invoice design (PDF or image). It will be used as the background/letterhead for generated invoices. Your data will be overlaid on top.</div>
+                </div>
+                <div class="form-group">
+                    <label>Custom Footer Text <span style="color:#94a3b8;">(optional)</span></label>
+                    <input type="text" name="footer_text" value="{{ user.footer_text or '' }}" placeholder="e.g. Thank you for your business! | Registered in Spain | CIF: B12345678">
+                    <div class="hint">Replaces the default footer on PDF invoices. Leave blank for default.</div>
                 </div>
             </div>
 
