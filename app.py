@@ -835,10 +835,10 @@ def settings():
 
     return render_template('settings.html', user=user)
 
-# --- API for FinanceSnap ---
+# --- API for SnapSuite ---
 @app.route('/api/invoices')
 def api_invoices():
-    """API endpoint for FinanceSnap to pull invoice data"""
+    """API endpoint for SnapSuite to pull invoice data"""
     api_key = request.headers.get('X-API-Key')
     if not api_key:
         return jsonify({'error': 'API key required'}), 401
