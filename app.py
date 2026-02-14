@@ -51,6 +51,7 @@ def init_db():
         tax_reg_label TEXT DEFAULT 'VAT No.',
         custom_template TEXT DEFAULT '',
         footer_text TEXT DEFAULT '',
+        is_superadmin BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
     )''')
     cur.execute('''CREATE TABLE IF NOT EXISTS invoices (
@@ -111,6 +112,8 @@ def init_db():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS footer_text TEXT DEFAULT ''",
         "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS client_tax_id TEXT DEFAULT ''",
         "ALTER TABLE clients ADD COLUMN IF NOT EXISTS tax_id TEXT DEFAULT ''",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN DEFAULT FALSE",
+        "UPDATE users SET is_superadmin = TRUE WHERE id = (SELECT MIN(id) FROM users)",
     ]
     for m in migrations:
         try:
@@ -173,6 +176,11 @@ def register():
         conn = get_db()
         cur = conn.cursor()
         try:
+            # First user becomes Super Admin
+            cur.execute('SELECT COUNT(*) FROM users')
+            user_count = cur.fetchone()[0]
+            is_superadmin = user_count == 0
+
             # Set tax defaults based on currency
             tax_label = 'GST'
             tax_rate = 5.0
@@ -191,10 +199,10 @@ def register():
                 tax_rate = 21.0
 
             cur.execute('''INSERT INTO users (email, password_hash, company_name, currency,
-                          tax_label, tax_rate, tax_label_2, tax_rate_2)
-                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id''',
+                          tax_label, tax_rate, tax_label_2, tax_rate_2, is_superadmin)
+                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id''',
                        (email, hash_pw(password), company, currency,
-                        tax_label, tax_rate, tax_label_2, tax_rate_2))
+                        tax_label, tax_rate, tax_label_2, tax_rate_2, is_superadmin))
             user_id = cur.fetchone()[0]
             session['user_id'] = user_id
             conn.close()
@@ -850,6 +858,55 @@ def api_invoices():
                 inv[k] = v.isoformat()
 
     return jsonify({'invoices': invoices, 'count': len(invoices)})
+
+# --- Admin Dashboard (Super Admin only) ---
+@app.route('/admin')
+@login_required
+def admin_dashboard():
+    user = get_user()
+    if not user.get('is_superadmin'):
+        flash('Access denied', 'error')
+        return redirect(url_for('dashboard'))
+
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Get all companies
+    cur.execute('''SELECT u.id, u.email, u.company_name, u.currency, u.created_at,
+                  COUNT(i.id) as invoice_count,
+                  COALESCE(SUM(i.total), 0) as total_invoiced,
+                  COALESCE(SUM(CASE WHEN i.status='paid' THEN i.total ELSE 0 END), 0) as total_paid,
+                  COALESCE(SUM(CASE WHEN i.status='unpaid' THEN i.total ELSE 0 END), 0) as total_unpaid,
+                  COALESCE(SUM(CASE WHEN i.status='overdue' THEN i.total ELSE 0 END), 0) as total_overdue
+                  FROM users u LEFT JOIN invoices i ON u.id = i.user_id
+                  GROUP BY u.id ORDER BY u.created_at DESC''')
+    companies = cur.fetchall()
+
+    # Platform totals
+    cur.execute('''SELECT
+        COUNT(*) as total_invoices,
+        COALESCE(SUM(total), 0) as total_value,
+        COALESCE(SUM(CASE WHEN status='paid' THEN total ELSE 0 END), 0) as total_paid,
+        COALESCE(SUM(CASE WHEN status='unpaid' THEN total ELSE 0 END), 0) as total_unpaid,
+        COALESCE(SUM(CASE WHEN status='overdue' THEN total ELSE 0 END), 0) as total_overdue,
+        (SELECT COUNT(*) FROM users) as total_users
+    FROM invoices''')
+    platform = cur.fetchone()
+
+    # View specific company's invoices
+    company_id = request.args.get('company_id')
+    company_invoices = []
+    selected_company = None
+    if company_id:
+        cur.execute('SELECT * FROM users WHERE id=%s', (company_id,))
+        selected_company = cur.fetchone()
+        cur.execute('SELECT * FROM invoices WHERE user_id=%s ORDER BY created_at DESC', (company_id,))
+        company_invoices = cur.fetchall()
+
+    conn.close()
+    return render_template('admin.html', user=user, companies=companies,
+                         platform=platform, company_invoices=company_invoices,
+                         selected_company=selected_company)
 
 # --- Helpers ---
 def get_curr_symbol(currency):
