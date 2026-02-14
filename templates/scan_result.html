@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceSnap — Scan Result</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f4f8; min-height: 100vh; }
+        .topbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .topbar h1 { font-size: 20px; font-weight: 700; color: #1e293b; }
+        .topbar h1 span { color: #2563eb; }
+        .topbar a { font-size: 13px; color: #64748b; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
+        .main { max-width: 800px; margin: 0 auto; padding: 24px; }
+        h2 { font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        .subtitle { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+        .success-bar { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .success-bar span { font-size: 14px; color: #16a34a; font-weight: 500; }
+        .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .card h3 { font-size: 15px; font-weight: 700; color: #374151; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #2563eb; }
+        .items-list { margin-bottom: 12px; }
+        .item-row { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        .item-row.header { font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; }
+        .total-section { text-align: right; padding-top: 12px; }
+        .total-line { font-size: 14px; color: #64748b; margin-bottom: 4px; }
+        .total-line strong { color: #1e293b; }
+        .total-grand { font-size: 20px; font-weight: 700; color: #2563eb; margin-top: 8px; }
+        .actions { display: flex; justify-content: flex-end; gap: 12px; }
+        .btn { padding: 13px 28px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; text-decoration: none; display: inline-block; }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { background: #f1f5f9; color: #374151; }
+        .btn-secondary:hover { background: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>Invoice<span>Snap</span></h1>
+        <a href="/">← Dashboard</a>
+    </div>
+
+    <div class="main">
+        <h2>✅ Invoice Scanned</h2>
+        <p class="subtitle">Review the extracted details below. Edit anything that looks wrong, then save.</p>
+
+        <div class="success-bar">
+            <span>✓ AI successfully extracted invoice details</span>
+        </div>
+
+        <form method="POST" action="/save-scanned">
+            <input type="hidden" name="scan_data" value='{{ data | tojson }}'>
+
+            <div class="card">
+                <h3>From: {{ data.vendor_name or 'Unknown Vendor' }}</h3>
+                <p style="font-size:13px;color:#64748b;margin-top:-10px;margin-bottom:10px;">{{ data.vendor_address or '' }}</p>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label>Bill To (Client Name)</label>
+                        <input type="text" name="client_name" value="{{ data.client_name or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Client Email</label>
+                        <input type="email" name="client_email" value="{{ data.client_email or '' }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Client Address</label>
+                    <textarea name="client_address" rows="2">{{ data.client_address or '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Invoice Details</h3>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Invoice Number</label>
+                        <input type="text" value="{{ data.invoice_number or '' }}" readonly style="background:#f8fafc;">
+                    </div>
+                    <div class="form-group">
+                        <label>Currency</label>
+                        <input type="text" value="{{ data.currency or 'CAD' }}" readonly style="background:#f8fafc;">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Issue Date</label>
+                        <input type="date" name="issue_date" value="{{ data.issue_date or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" name="due_date" value="{{ data.due_date or '' }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Line Items</h3>
+                <div class="items-list">
+                    <div class="item-row header">
+                        <span>Description</span>
+                        <span style="text-align:right">Qty</span>
+                        <span style="text-align:right">Price</span>
+                        <span style="text-align:right">Amount</span>
+                    </div>
+                    {% for item in data.get('items', []) %}
+                    <div class="item-row">
+                        <span>{{ item.description }}</span>
+                        <span style="text-align:right">{{ item.quantity }}</span>
+                        <span style="text-align:right">{{ curr_symbol }}{{ "%.2f"|format(item.unit_price) }}</span>
+                        <span style="text-align:right;font-weight:600;">{{ curr_symbol }}{{ "%.2f"|format(item.amount) }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="total-section">
+                    <div class="total-line">Subtotal: <strong>{{ curr_symbol }}{{ "%.2f"|format(data.get('subtotal', 0)) }}</strong></div>
+                    {% for tax in data.get('tax_details', []) %}
+                    <div class="total-line">{{ tax.label }} ({{ tax.rate }}%): <strong>{{ curr_symbol }}{{ "%.2f"|format(tax.amount) }}</strong></div>
+                    {% endfor %}
+                    {% if data.get('discount', 0) > 0 %}
+                    <div class="total-line">Discount: <strong>-{{ curr_symbol }}{{ "%.2f"|format(data.discount) }}</strong></div>
+                    {% endif %}
+                    <div class="total-grand">{{ curr_symbol }}{{ "%.2f"|format(data.get('total', 0)) }}</div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a href="/scan" class="btn btn-secondary">Scan Another</a>
+                <button type="submit" class="btn btn-primary">💾 Save Invoice</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

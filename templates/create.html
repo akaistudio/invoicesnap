@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceSnap — New Invoice</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f4f8; min-height: 100vh; }
+        .topbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .topbar h1 { font-size: 20px; font-weight: 700; color: #1e293b; }
+        .topbar h1 span { color: #2563eb; }
+        .topbar a { font-size: 13px; color: #64748b; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
+        .topbar a:hover { background: #f1f5f9; }
+        .main { max-width: 800px; margin: 0 auto; padding: 24px; }
+        h2 { font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 20px; }
+        .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 20px; }
+        .card h3 { font-size: 15px; font-weight: 700; color: #374151; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .form-group textarea { resize: vertical; min-height: 70px; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        .items-table th { text-align: left; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; padding: 8px 6px; }
+        .items-table td { padding: 4px 6px; }
+        .items-table input { width: 100%; padding: 9px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; }
+        .items-table input:focus { outline: none; border-color: #2563eb; }
+        .items-table .col-desc { width: 45%; }
+        .items-table .col-qty { width: 12%; }
+        .items-table .col-price { width: 18%; }
+        .items-table .col-amount { width: 18%; }
+        .items-table .col-del { width: 7%; }
+        .add-item { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: #eff6ff; color: #2563eb; border: 1px dashed #93c5fd; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .add-item:hover { background: #dbeafe; }
+        .del-btn { background: none; border: none; color: #ef4444; font-size: 18px; cursor: pointer; padding: 6px; border-radius: 6px; }
+        .del-btn:hover { background: #fef2f2; }
+        .totals { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
+        .total-row { display: flex; align-items: center; gap: 16px; font-size: 14px; }
+        .total-row .label { color: #64748b; min-width: 120px; text-align: right; }
+        .total-row .value { font-weight: 600; color: #1e293b; min-width: 100px; text-align: right; }
+        .total-row.grand { font-size: 18px; padding-top: 8px; border-top: 2px solid #2563eb; }
+        .total-row.grand .value { color: #2563eb; }
+        .tax-row { display: grid; grid-template-columns: 1fr 100px; gap: 12px; align-items: end; }
+        .btn { padding: 13px 28px; background: #2563eb; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; }
+        .btn:hover { background: #1d4ed8; }
+        .btn-secondary { background: #f1f5f9; color: #374151; }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+        .client-suggest { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10; display: none; }
+        .client-suggest div { padding: 10px 12px; cursor: pointer; font-size: 14px; }
+        .client-suggest div:hover { background: #f1f5f9; }
+        .client-wrapper { position: relative; }
+        @media (max-width: 768px) { .row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>Invoice<span>Snap</span></h1>
+        <a href="/">← Back to Dashboard</a>
+    </div>
+
+    <div class="main">
+        <h2>Create New Invoice</h2>
+
+        <form method="POST" id="invoiceForm">
+            <div class="card">
+                <h3>Client Details</h3>
+                <div class="row">
+                    <div class="form-group client-wrapper">
+                        <label>Client Name *</label>
+                        <input type="text" name="client_name" id="clientName" required placeholder="Enter client name" autocomplete="off">
+                        <div class="client-suggest" id="clientSuggest">
+                            {% for c in clients %}
+                            <div onclick="selectClient('{{ c.name }}', '{{ c.email }}', '{{ c.address | replace('\n', '\\n') }}')">{{ c.name }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Client Email</label>
+                        <input type="email" name="client_email" id="clientEmail" placeholder="client@company.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Client Address</label>
+                    <textarea name="client_address" id="clientAddress" placeholder="Full billing address"></textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Invoice Details</h3>
+                <div class="row">
+                    <div class="form-group">
+                        <label>Issue Date *</label>
+                        <input type="date" name="issue_date" value="{{ today }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Due Date *</label>
+                        <input type="date" name="due_date" value="{{ due_date }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Line Items</h3>
+                <table class="items-table" id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th class="col-desc">Description</th>
+                            <th class="col-qty">Qty</th>
+                            <th class="col-price">Unit Price ({{ curr }})</th>
+                            <th class="col-amount">Amount</th>
+                            <th class="col-del"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                        <tr>
+                            <td><input type="text" name="item_description[]" placeholder="Service or product" required></td>
+                            <td><input type="number" name="item_quantity[]" value="1" min="0.01" step="0.01" onchange="calcTotals()"></td>
+                            <td><input type="number" name="item_price[]" value="0" min="0" step="0.01" onchange="calcTotals()"></td>
+                            <td class="item-amount" style="padding:10px;font-weight:600;color:#374151;">{{ curr }}0.00</td>
+                            <td><button type="button" class="del-btn" onclick="removeRow(this)">×</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button type="button" class="add-item" onclick="addRow()">+ Add Item</button>
+
+                <div class="totals" id="totalsSection">
+                    <div class="total-row">
+                        <span class="label">Subtotal:</span>
+                        <span class="value" id="subtotal">{{ curr }}0.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="label">Discount (%):</span>
+                        <span class="value"><input type="number" name="discount_percent" value="0" min="0" max="100" step="0.1" style="width:70px;padding:6px 8px;border:1.5px solid #e2e8f0;border-radius:6px;text-align:right;font-size:14px;" onchange="calcTotals()"></span>
+                    </div>
+                    <div class="total-row">
+                        <span class="label">
+                            <input type="text" name="tax_1_label" value="{{ user.tax_label }}" style="width:60px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:center;">
+                            (<input type="number" name="tax_1_rate" value="{{ user.tax_rate }}" min="0" max="100" step="0.1" style="width:55px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:right;" onchange="calcTotals()">%):
+                        </span>
+                        <span class="value" id="tax1Amount">{{ curr }}0.00</span>
+                    </div>
+                    {% if user.tax_label_2 %}
+                    <div class="total-row">
+                        <span class="label">
+                            <input type="text" name="tax_2_label" value="{{ user.tax_label_2 }}" style="width:60px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:center;">
+                            (<input type="number" name="tax_2_rate" value="{{ user.tax_rate_2 }}" min="0" max="100" step="0.1" style="width:55px;padding:4px 6px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:right;" onchange="calcTotals()">%):
+                        </span>
+                        <span class="value" id="tax2Amount">{{ curr }}0.00</span>
+                    </div>
+                    {% else %}
+                    <input type="hidden" name="tax_2_label" value="">
+                    <input type="hidden" name="tax_2_rate" value="0">
+                    {% endif %}
+                    <div class="total-row grand">
+                        <span class="label">Total:</span>
+                        <span class="value" id="grandTotal">{{ curr }}0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Notes</h3>
+                <div class="form-group" style="margin-bottom:0">
+                    <textarea name="notes" placeholder="Payment instructions, thank you notes, terms..."></textarea>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a href="/" class="btn btn-secondary" style="text-decoration:none;">Cancel</a>
+                <button type="submit" class="btn">Create Invoice</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const curr = '{{ curr }}';
+        const clients = {{ clients | tojson }};
+
+        function addRow() {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" name="item_description[]" placeholder="Service or product"></td>
+                <td><input type="number" name="item_quantity[]" value="1" min="0.01" step="0.01" onchange="calcTotals()"></td>
+                <td><input type="number" name="item_price[]" value="0" min="0" step="0.01" onchange="calcTotals()"></td>
+                <td class="item-amount" style="padding:10px;font-weight:600;color:#374151;">${curr}0.00</td>
+                <td><button type="button" class="del-btn" onclick="removeRow(this)">×</button></td>
+            `;
+            document.getElementById('itemsBody').appendChild(row);
+        }
+
+        function removeRow(btn) {
+            const rows = document.getElementById('itemsBody').rows;
+            if (rows.length > 1) { btn.closest('tr').remove(); calcTotals(); }
+        }
+
+        function calcTotals() {
+            const qtys = document.querySelectorAll('input[name="item_quantity[]"]');
+            const prices = document.querySelectorAll('input[name="item_price[]"]');
+            const amounts = document.querySelectorAll('.item-amount');
+            let subtotal = 0;
+
+            qtys.forEach((q, i) => {
+                const amount = (parseFloat(q.value) || 0) * (parseFloat(prices[i].value) || 0);
+                amounts[i].textContent = curr + amount.toFixed(2);
+                subtotal += amount;
+            });
+
+            const discount = parseFloat(document.querySelector('input[name="discount_percent"]').value) || 0;
+            const discountAmt = subtotal * discount / 100;
+            const taxable = subtotal - discountAmt;
+
+            const tax1Rate = parseFloat(document.querySelector('input[name="tax_1_rate"]').value) || 0;
+            const tax1Amt = taxable * tax1Rate / 100;
+
+            let tax2Amt = 0;
+            const tax2Input = document.querySelector('input[name="tax_2_rate"]');
+            if (tax2Input) {
+                const tax2Rate = parseFloat(tax2Input.value) || 0;
+                tax2Amt = taxable * tax2Rate / 100;
+            }
+
+            const total = taxable + tax1Amt + tax2Amt;
+
+            document.getElementById('subtotal').textContent = curr + subtotal.toFixed(2);
+            document.getElementById('tax1Amount').textContent = curr + tax1Amt.toFixed(2);
+            if (document.getElementById('tax2Amount'))
+                document.getElementById('tax2Amount').textContent = curr + tax2Amt.toFixed(2);
+            document.getElementById('grandTotal').textContent = curr + total.toFixed(2);
+        }
+
+        // Client autocomplete
+        const nameInput = document.getElementById('clientName');
+        const suggest = document.getElementById('clientSuggest');
+
+        nameInput.addEventListener('focus', () => { if (clients.length) suggest.style.display = 'block'; });
+        nameInput.addEventListener('blur', () => { setTimeout(() => suggest.style.display = 'none', 200); });
+        nameInput.addEventListener('input', () => {
+            const val = nameInput.value.toLowerCase();
+            const items = suggest.querySelectorAll('div');
+            let any = false;
+            items.forEach(d => {
+                const show = d.textContent.toLowerCase().includes(val);
+                d.style.display = show ? 'block' : 'none';
+                if (show) any = true;
+            });
+            suggest.style.display = any ? 'block' : 'none';
+        });
+
+        function selectClient(name, email, address) {
+            document.getElementById('clientName').value = name;
+            document.getElementById('clientEmail').value = email;
+            document.getElementById('clientAddress').value = address.replace(/\\n/g, '\n');
+            suggest.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

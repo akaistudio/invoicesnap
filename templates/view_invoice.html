@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceSnap — {{ invoice.invoice_number }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f4f8; min-height: 100vh; }
+        .topbar { background: #fff; border-bottom: 1px solid #e2e8f0; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .topbar h1 { font-size: 20px; font-weight: 700; color: #1e293b; }
+        .topbar h1 span { color: #2563eb; }
+        .topbar-right { display: flex; gap: 8px; }
+        .topbar-right a { font-size: 13px; color: #64748b; text-decoration: none; padding: 8px 14px; border-radius: 8px; }
+        .topbar-right a:hover { background: #f1f5f9; }
+        .topbar-right a.primary { background: #2563eb; color: #fff; font-weight: 600; }
+        .main { max-width: 800px; margin: 0 auto; padding: 24px; }
+        .flash { padding: 12px 16px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
+        .flash.success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+        .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .header-row h2 { font-size: 22px; font-weight: 700; color: #1e293b; }
+        .status-actions { display: flex; align-items: center; gap: 12px; }
+        .status { display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+        .status.paid { background: #dcfce7; color: #16a34a; }
+        .status.unpaid { background: #fef9c3; color: #a16207; }
+        .status.overdue { background: #fee2e2; color: #dc2626; }
+        .action-btns { display: flex; gap: 8px; }
+        .action-btns form { display: inline; }
+        .btn-sm { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid #e2e8f0; background: #fff; color: #374151; font-family: 'Inter', sans-serif; text-decoration: none; }
+        .btn-sm:hover { background: #f8fafc; }
+        .btn-sm.green { border-color: #22c55e; color: #16a34a; }
+        .btn-sm.green:hover { background: #f0fdf4; }
+        .btn-sm.red { border-color: #ef4444; color: #dc2626; }
+        .btn-sm.red:hover { background: #fef2f2; }
+        .btn-sm.blue { border-color: #2563eb; color: #2563eb; }
+        .btn-sm.blue:hover { background: #eff6ff; }
+        .invoice-card { background: #fff; border-radius: 12px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+        .invoice-top { display: flex; justify-content: space-between; margin-bottom: 32px; }
+        .company-info h3 { font-size: 20px; font-weight: 700; color: {{ user.brand_color or '#2563eb' }}; margin-bottom: 4px; }
+        .company-info p { font-size: 13px; color: #64748b; line-height: 1.5; }
+        .invoice-meta { text-align: right; }
+        .invoice-meta .inv-number { font-size: 14px; font-weight: 700; color: #1e293b; }
+        .invoice-meta p { font-size: 13px; color: #64748b; margin-top: 2px; }
+        .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px; }
+        .party-label { font-size: 11px; font-weight: 700; color: {{ user.brand_color or '#2563eb' }}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .party-name { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 2px; }
+        .party-detail { font-size: 13px; color: #64748b; line-height: 1.5; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+        .items-table th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; background: {{ user.brand_color or '#2563eb' }}10; color: {{ user.brand_color or '#2563eb' }}; border-bottom: 2px solid {{ user.brand_color or '#2563eb' }}30; }
+        .items-table td { padding: 12px; font-size: 14px; color: #374151; border-bottom: 1px solid #f1f5f9; }
+        .items-table .right { text-align: right; }
+        .totals-section { display: flex; justify-content: flex-end; }
+        .totals-box { min-width: 280px; }
+        .total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+        .total-row .label { color: #64748b; }
+        .total-row .value { font-weight: 600; color: #1e293b; }
+        .total-row.grand { padding-top: 10px; margin-top: 6px; border-top: 2px solid {{ user.brand_color or '#2563eb' }}; font-size: 18px; }
+        .total-row.grand .value { color: {{ user.brand_color or '#2563eb' }}; font-weight: 700; }
+        .notes-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
+        .notes-section h4 { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; }
+        .notes-section p { font-size: 13px; color: #64748b; line-height: 1.6; }
+        .source-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 8px; }
+        .source-badge.manual { background: #eff6ff; color: #2563eb; }
+        .source-badge.scanned { background: #faf5ff; color: #7c3aed; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>Invoice<span>Snap</span></h1>
+        <div class="topbar-right">
+            <a href="/">← Dashboard</a>
+            <a href="/invoice/{{ invoice.id }}/pdf" class="primary">⬇ Download PDF</a>
+        </div>
+    </div>
+
+    <div class="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+        {% endwith %}
+
+        <div class="header-row">
+            <h2>{{ invoice.invoice_number }} <span class="source-badge {{ invoice.source }}">{{ invoice.source }}</span></h2>
+            <div class="status-actions">
+                <span class="status {{ invoice.status }}">{{ invoice.status | capitalize }}</span>
+                <div class="action-btns">
+                    {% if invoice.status != 'paid' %}
+                    <form method="POST" action="/invoice/{{ invoice.id }}/status">
+                        <input type="hidden" name="status" value="paid">
+                        <button class="btn-sm green" type="submit">✓ Mark Paid</button>
+                    </form>
+                    {% endif %}
+                    {% if invoice.status == 'paid' %}
+                    <form method="POST" action="/invoice/{{ invoice.id }}/status">
+                        <input type="hidden" name="status" value="unpaid">
+                        <button class="btn-sm" type="submit">↩ Mark Unpaid</button>
+                    </form>
+                    {% endif %}
+                    <form method="POST" action="/invoice/{{ invoice.id }}/delete" onsubmit="return confirm('Delete this invoice?')">
+                        <button class="btn-sm red" type="submit">🗑 Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="invoice-card">
+            <div class="invoice-top">
+                <div class="company-info">
+                    {% if user.logo_data %}
+                    <img src="{{ user.logo_data }}" alt="Logo" style="max-height:50px;margin-bottom:8px;">
+                    {% endif %}
+                    <h3>{{ user.company_name or 'Your Company' }}</h3>
+                    {% if user.company_address %}<p>{{ user.company_address }}</p>{% endif %}
+                    {% if user.company_email %}<p>{{ user.company_email }}</p>{% endif %}
+                    {% if user.company_phone %}<p>{{ user.company_phone }}</p>{% endif %}
+                </div>
+                <div class="invoice-meta">
+                    <div class="inv-number">{{ invoice.invoice_number }}</div>
+                    <p>Issued: {{ invoice.issue_date }}</p>
+                    <p>Due: {{ invoice.due_date }}</p>
+                    {% if invoice.paid_at %}<p>Paid: {{ invoice.paid_at.strftime('%Y-%m-%d') if invoice.paid_at else '' }}</p>{% endif %}
+                </div>
+            </div>
+
+            <div class="parties">
+                <div>
+                    <div class="party-label">Bill To</div>
+                    <div class="party-name">{{ invoice.client_name }}</div>
+                    {% if invoice.client_address %}<div class="party-detail">{{ invoice.client_address }}</div>{% endif %}
+                    {% if invoice.client_email %}<div class="party-detail">{{ invoice.client_email }}</div>{% endif %}
+                </div>
+                <div style="text-align:right;">
+                    <div class="party-label">Payment Terms</div>
+                    <div class="party-detail">{{ user.payment_terms or 'Net 30' }}</div>
+                </div>
+            </div>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th class="right">Qty</th>
+                        <th class="right">Unit Price</th>
+                        <th class="right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.description }}</td>
+                        <td class="right">{{ item.quantity }}</td>
+                        <td class="right">{{ curr }}{{ "%.2f"|format(item.unit_price) }}</td>
+                        <td class="right"><strong>{{ curr }}{{ "%.2f"|format(item.amount) }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="totals-section">
+                <div class="totals-box">
+                    <div class="total-row">
+                        <span class="label">Subtotal</span>
+                        <span class="value">{{ curr }}{{ "%.2f"|format(invoice.subtotal) }}</span>
+                    </div>
+                    {% if invoice.discount_amount and invoice.discount_amount > 0 %}
+                    <div class="total-row">
+                        <span class="label">Discount ({{ invoice.discount_percent }}%)</span>
+                        <span class="value">-{{ curr }}{{ "%.2f"|format(invoice.discount_amount) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if invoice.tax_1_amount and invoice.tax_1_amount > 0 %}
+                    <div class="total-row">
+                        <span class="label">{{ invoice.tax_1_label }} ({{ invoice.tax_1_rate }}%)</span>
+                        <span class="value">{{ curr }}{{ "%.2f"|format(invoice.tax_1_amount) }}</span>
+                    </div>
+                    {% endif %}
+                    {% if invoice.tax_2_amount and invoice.tax_2_amount > 0 %}
+                    <div class="total-row">
+                        <span class="label">{{ invoice.tax_2_label }} ({{ invoice.tax_2_rate }}%)</span>
+                        <span class="value">{{ curr }}{{ "%.2f"|format(invoice.tax_2_amount) }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="total-row grand">
+                        <span class="label">Total</span>
+                        <span class="value">{{ curr }}{{ "%.2f"|format(invoice.total) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if invoice.notes %}
+            <div class="notes-section">
+                <h4>Notes</h4>
+                <p>{{ invoice.notes }}</p>
+            </div>
+            {% endif %}
+
+            {% if user.bank_details %}
+            <div class="notes-section">
+                <h4>Payment Details</h4>
+                <p>{{ user.bank_details | replace('\n', '<br>') | safe }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
