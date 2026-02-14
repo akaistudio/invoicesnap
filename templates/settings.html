@@ -114,7 +114,7 @@
                         <input type="color" id="colorPicker" value="{{ user.brand_color or '#2563eb' }}" onchange="document.getElementById('colorText').value=this.value">
                         <input type="text" id="colorText" name="brand_color" value="{{ user.brand_color or '#2563eb' }}" placeholder="#2563eb" onchange="document.getElementById('colorPicker').value=this.value">
                     </div>
-                    <div class="hint">Used for invoice headers, accents, and PDF styling.</div>
+                    <div class="hint">Auto-extracted from your logo when you upload one. You can override manually.</div>
                 </div>
                 <div class="form-group">
                     <label>Custom Invoice Template <span style="color:#94a3b8;">(optional)</span></label>

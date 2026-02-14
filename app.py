@@ -763,6 +763,11 @@ def settings():
             media_type = f"image/{'jpeg' if ext in ('jpg','jpeg') else ext}"
             logo_data = f"data:{media_type};base64,{base64.b64encode(img_data).decode()}"
 
+            # Auto-extract brand color from logo
+            extracted = extract_brand_color(img_data)
+            if extracted:
+                brand_color = extracted
+
         # Handle custom template upload
         custom_template = user.get('custom_template', '')
         template_file = request.files.get('custom_template')
@@ -832,6 +837,29 @@ def api_invoices():
 def get_curr_symbol(currency):
     symbols = {'CAD': 'C$', 'INR': '₹', 'EUR': '€', 'USD': '$', 'GBP': '£'}
     return symbols.get(currency, '$')
+
+def extract_brand_color(img_bytes):
+    """Extract the dominant non-white/non-black color from a logo."""
+    try:
+        from PIL import Image
+        from collections import Counter
+        img = Image.open(BytesIO(img_bytes)).convert('RGB')
+        img = img.resize((100, 100))
+        pixels = list(img.getdata())
+        # Filter out near-white, near-black, and grey pixels
+        colored = []
+        for r, g, b in pixels:
+            brightness = (r + g + b) / 3
+            saturation = max(r, g, b) - min(r, g, b)
+            if brightness > 30 and brightness < 230 and saturation > 30:
+                # Quantize to reduce similar colors
+                colored.append((r // 16 * 16, g // 16 * 16, b // 16 * 16))
+        if not colored:
+            return None
+        most_common = Counter(colored).most_common(1)[0][0]
+        return f"#{most_common[0]:02x}{most_common[1]:02x}{most_common[2]:02x}"
+    except Exception:
+        return None
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
