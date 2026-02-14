@@ -5,3 +5,4 @@ anthropic>=0.39.0
 httpx<0.28
 fpdf2==2.8.1
 Pillow>=10.0.0
+requests==2.31.0
