@@ -951,3 +951,48 @@ def extract_brand_color(img_bytes):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
+
+# --- Seed Test Data ---
+@app.route('/api/seed-test-data', methods=['POST'])
+def seed_test_data():
+    api_key = request.headers.get('X-API-Key', '')
+    if not api_key: return jsonify({'error': 'API key required'}), 401
+    conn = get_db(); cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT * FROM users WHERE email=%s', (api_key,))
+    user = cur.fetchone()
+    if not user: conn.close(); return jsonify({'error': 'Invalid API key'}), 401
+    uid = user['id']
+
+    invoices = [
+        ('INV-2026-101','Meridian Architects','meridian@example.com','45 MG Road, Bangalore','9876543210','29ABCDE1234F1Z5',
+         '2025-12-01','2025-12-31','paid',50000,'CGST',9,4500,'SGST',9,4500,0,0,59000,'INR','Brand identity design','Bloom Studio'),
+        ('INV-2026-102','Zenith Foods Pvt Ltd','zenith@example.com','12 Church St, Bangalore','9876500001','29FGHIJ5678K2Z3',
+         '2025-12-15','2026-01-14','paid',120000,'CGST',9,10800,'SGST',9,10800,0,0,141600,'INR','Website redesign + development','Bloom Studio'),
+        ('INV-2026-103','Priya Wellness Spa','priya@example.com','88 Lavelle Rd, Bangalore','9812345678','29KLMNO9012P3Z1',
+         '2026-01-05','2026-02-04','paid',35000,'CGST',9,3150,'SGST',9,3150,0,0,41300,'INR','Social media content pack','Bloom Studio'),
+        ('INV-2026-104','TechNova Solutions','technova@example.com','HSR Layout, Bangalore','9900112233','29PQRST3456U4Z9',
+         '2026-01-15','2026-02-14','unpaid',85000,'CGST',9,7650,'SGST',9,7650,0,0,100300,'INR','Mobile app UI/UX design','Bloom Studio'),
+        ('INV-2026-105','Green Earth Organics','green@example.com','Koramangala, Bangalore','9988776655','29UVWXY7890Z5Z7',
+         '2026-01-20','2026-02-19','unpaid',28000,'CGST',9,2520,'SGST',9,2520,0,0,33040,'INR','Packaging design - 5 SKUs','Bloom Studio'),
+        ('INV-2026-106','Meridian Architects','meridian@example.com','45 MG Road, Bangalore','9876543210','29ABCDE1234F1Z5',
+         '2026-02-01','2026-03-02','unpaid',75000,'CGST',9,6750,'SGST',9,6750,0,0,88500,'INR','Office interior 3D renders','Bloom Studio'),
+        ('INV-2026-107','CloudFirst India','cloud@example.com','Whitefield, Bangalore','9123456780','29QWERT1234Y6Z2',
+         '2025-11-01','2025-12-01','overdue',45000,'CGST',9,4050,'SGST',9,4050,0,0,53100,'INR','Pitch deck + investor materials','Bloom Studio'),
+        ('INV-2026-108','Namaste Travels','namaste@example.com','Indiranagar, Bangalore','9876012345','29ASDFG5678H7Z4',
+         '2025-11-15','2025-12-15','overdue',22000,'CGST',9,1980,'SGST',9,1980,0,0,25960,'INR','Travel brochure design','Bloom Studio'),
+    ]
+    count = 0
+    for inv in invoices:
+        cur.execute("""INSERT INTO invoices (user_id,invoice_number,client_name,client_email,client_address,client_phone,client_tax_id,
+                       issue_date,due_date,status,subtotal,tax_1_label,tax_1_rate,tax_1_amount,tax_2_label,tax_2_rate,tax_2_amount,
+                       discount_percent,discount_amount,total,currency,notes,company_name)
+                       VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                   (uid,)+inv)
+        # Add line items
+        cur.execute("SELECT id FROM invoices WHERE invoice_number=%s AND user_id=%s", (inv[0], uid))
+        iid = cur.fetchone()['id']
+        cur.execute("INSERT INTO invoice_items (invoice_id,description,quantity,unit_price,amount) VALUES (%s,%s,1,%s,%s)",
+                   (iid, inv[20], inv[9], inv[9]))
+        count += 1
+    conn.commit(); conn.close()
+    return jsonify({'success': True, 'company': 'Bloom Studio', 'invoices': count})
