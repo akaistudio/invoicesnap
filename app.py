@@ -115,6 +115,7 @@ def init_db():
         "ALTER TABLE clients ADD COLUMN IF NOT EXISTS tax_id TEXT DEFAULT ''",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN DEFAULT FALSE",
         "UPDATE users SET is_superadmin = TRUE WHERE id = (SELECT MIN(id) FROM users)",
+        "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS company_name TEXT DEFAULT ''",
     ]
     for m in migrations:
         try:
@@ -852,11 +853,20 @@ def api_invoices():
 
     month = request.args.get('month')
     year = request.args.get('year')
+    company_name = request.args.get('company_name', '')
     query = 'SELECT * FROM invoices WHERE user_id=%s'
     params = [user['id']]
     if month and year:
         query += ' AND EXTRACT(MONTH FROM issue_date)=%s AND EXTRACT(YEAR FROM issue_date)=%s'
         params.extend([month, year])
+    if company_name:
+        # Match by company_name, OR match invoices with no company_name if it matches user's default company
+        user_company = user.get('company_name', '') or ''
+        if user_company.lower().strip() == company_name.lower().strip():
+            query += " AND (LOWER(company_name)=LOWER(%s) OR company_name IS NULL OR company_name='')"
+        else:
+            query += ' AND LOWER(company_name)=LOWER(%s)'
+        params.append(company_name)
     cur.execute(query + ' ORDER BY issue_date DESC', params)
     invoices = cur.fetchall()
     conn.close()
