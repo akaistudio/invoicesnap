@@ -1006,3 +1006,40 @@ def seed_test_data():
         count += 1
     conn.commit(); conn.close()
     return jsonify({'success': True, 'company': 'Bloom Studio', 'invoices': count})
+
+# --- Demo Setup ---
+@app.route('/api/demo-setup', methods=['POST'])
+def demo_setup():
+    secret = request.headers.get('X-Demo-Secret', '')
+    if secret != 'snapsuite-demo-2026': return jsonify({'error': 'Unauthorized'}), 403
+    conn = get_db(); cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    demo_email = 'demo@snapsuite.app'
+    cur.execute('SELECT * FROM users WHERE email=%s', (demo_email,))
+    user = cur.fetchone()
+    if not user:
+        cur.execute("""INSERT INTO users (email,password_hash,company_name,currency,tax_label,tax_rate,tax_label_2,tax_rate_2,is_superadmin)
+                       VALUES (%s,%s,'Bloom Studio','INR','CGST',9,'SGST',9,TRUE) RETURNING *""",
+                   (demo_email, hash_pw('demo123')))
+        user = cur.fetchone()
+        conn.commit()
+    uid = user['id']
+    cur.execute('SELECT COUNT(*) as cnt FROM invoices WHERE user_id=%s AND company_name=%s', (uid, 'Bloom Studio'))
+    if cur.fetchone()['cnt'] == 0:
+        invs = [
+            ('INV-2026-101','Meridian Architects','2025-12-01','2025-12-31','paid',50000,4500,4500,59000,'Brand identity design'),
+            ('INV-2026-102','Zenith Foods Pvt Ltd','2025-12-15','2026-01-14','paid',120000,10800,10800,141600,'Website redesign + development'),
+            ('INV-2026-103','Priya Wellness Spa','2026-01-05','2026-02-04','paid',35000,3150,3150,41300,'Social media content pack'),
+            ('INV-2026-104','TechNova Solutions','2026-01-15','2026-02-14','unpaid',85000,7650,7650,100300,'Mobile app UI/UX design'),
+            ('INV-2026-105','Green Earth Organics','2026-01-20','2026-02-19','unpaid',28000,2520,2520,33040,'Packaging design - 5 SKUs'),
+            ('INV-2026-106','Meridian Architects','2026-02-01','2026-03-02','unpaid',75000,6750,6750,88500,'Office interior 3D renders'),
+            ('INV-2026-107','CloudFirst India','2025-11-01','2025-12-01','overdue',45000,4050,4050,53100,'Pitch deck + investor materials'),
+            ('INV-2026-108','Namaste Travels','2025-11-15','2025-12-15','overdue',22000,1980,1980,25960,'Travel brochure design'),
+        ]
+        for i in invs:
+            cur.execute("""INSERT INTO invoices (user_id,invoice_number,client_name,issue_date,due_date,status,
+                           subtotal,tax_1_label,tax_1_rate,tax_1_amount,tax_2_label,tax_2_rate,tax_2_amount,
+                           total,currency,notes,company_name)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,'CGST',9,%s,'SGST',9,%s,%s,'INR',%s,'Bloom Studio')""",
+                       (uid,i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7],i[8],i[9]))
+    conn.commit(); conn.close()
+    return jsonify({'success': True, 'app': 'InvoiceSnap'})
