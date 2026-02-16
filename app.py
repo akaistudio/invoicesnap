@@ -208,23 +208,35 @@ def register():
             tax_rate = 5.0
             tax_label_2 = ''
             tax_rate_2 = 0.0
+            tax_reg_label = 'Tax ID'
             if currency == 'INR':
                 tax_label = 'CGST'
                 tax_rate = 9.0
                 tax_label_2 = 'SGST'
                 tax_rate_2 = 9.0
+                tax_reg_label = 'GSTIN'
             elif currency == 'CAD':
                 tax_label = 'GST'
                 tax_rate = 5.0
+                tax_reg_label = 'GST/HST No.'
+            elif currency == 'USD':
+                tax_label = 'Sales Tax'
+                tax_rate = 0.0
+                tax_reg_label = 'EIN'
+            elif currency == 'GBP':
+                tax_label = 'VAT'
+                tax_rate = 20.0
+                tax_reg_label = 'VAT No.'
             elif currency == 'EUR':
-                tax_label = 'IVA'
+                tax_label = 'VAT'
                 tax_rate = 21.0
+                tax_reg_label = 'VAT No.'
 
             cur.execute('''INSERT INTO users (email, password_hash, company_name, currency,
-                          tax_label, tax_rate, tax_label_2, tax_rate_2, is_superadmin)
-                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id''',
+                          tax_label, tax_rate, tax_label_2, tax_rate_2, tax_reg_label, is_superadmin)
+                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id''',
                        (email, hash_pw(password), company, currency,
-                        tax_label, tax_rate, tax_label_2, tax_rate_2, is_superadmin))
+                        tax_label, tax_rate, tax_label_2, tax_rate_2, tax_reg_label, is_superadmin))
             user_id = cur.fetchone()[0]
             session['user_id'] = user_id
             conn.close()
