@@ -144,6 +144,7 @@
                             <option value="EUR" {% if user.currency=='EUR' %}selected{% endif %}>🇪🇺 EUR — Euro</option>
                             <option value="USD" {% if user.currency=='USD' %}selected{% endif %}>🇺🇸 USD — US Dollar</option>
                             <option value="GBP" {% if user.currency=='GBP' %}selected{% endif %}>🇬🇧 GBP — British Pound</option>
+                            <option value="MYR" {% if user.currency=='MYR' %}selected{% endif %}>🇲🇾 MYR — Malaysian Ringgit</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -182,6 +183,7 @@
                     <span class="tax-preset" onclick="setTax('CGST','6','SGST','6')">🇮🇳 India GST 12%</span>
                     <span class="tax-preset" onclick="setTax('IVA','21','','0')">🇪🇸 Spain IVA 21%</span>
                     <span class="tax-preset" onclick="setTax('VAT','20','','0')">🇬🇧 UK VAT 20%</span>
+                    <span class="tax-preset" onclick="setTax('SST','6','','0')">🇲🇾 Malaysia SST 6%</span>
                 </div>
             </div>
 
@@ -222,6 +224,7 @@
             else if (c === 'EUR') setTax('IVA', '21', '', '0');
             else if (c === 'GBP') setTax('VAT', '20', '', '0');
             else if (c === 'USD') setTax('Sales Tax', '0', '', '0');
+            else if (c === 'MYR') setTax('SST', '6', '', '0');
         }
     </script>
 </body>

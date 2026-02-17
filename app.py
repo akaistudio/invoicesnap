@@ -231,6 +231,10 @@ def register():
                 tax_label = 'VAT'
                 tax_rate = 21.0
                 tax_reg_label = 'VAT No.'
+            elif currency == 'MYR':
+                tax_label = 'SST'
+                tax_rate = 6.0
+                tax_reg_label = 'SST Reg. No.'
 
             cur.execute('''INSERT INTO users (email, password_hash, company_name, currency,
                           tax_label, tax_rate, tax_label_2, tax_rate_2, tax_reg_label, is_superadmin)
@@ -292,7 +296,7 @@ def dashboard():
     conn.close()
 
     # Currency symbols
-    symbols = {'CAD': 'C$', 'INR': '₹', 'EUR': '€', 'USD': '$', 'GBP': '£'}
+    symbols = {'CAD': 'C$', 'INR': '₹', 'EUR': '€', 'USD': '$', 'GBP': '£', 'MYR': 'RM'}
     curr_symbol = symbols.get(user['currency'], '$')
 
     return render_template('dashboard.html', user=user, invoices=invoices,
@@ -386,7 +390,7 @@ def create_invoice():
 
     today = datetime.now().strftime('%Y-%m-%d')
     due = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
-    symbols = {'CAD': 'C$', 'INR': '₹', 'EUR': '€', 'USD': '$', 'GBP': '£'}
+    symbols = {'CAD': 'C$', 'INR': '₹', 'EUR': '€', 'USD': '$', 'GBP': '£', 'MYR': 'RM'}
 
     return render_template('create.html', user=user, clients=clients,
                          today=today, due_date=due, curr=symbols.get(user['currency'], '$'))
@@ -607,7 +611,7 @@ def generate_pdf(user, invoice, items):
     from fpdf import FPDF
 
     # Use ASCII-safe currency symbols for PDF
-    pdf_curr_map = {'CAD': 'C$', 'INR': 'Rs.', 'EUR': 'EUR ', 'USD': '$', 'GBP': 'GBP '}
+    pdf_curr_map = {'CAD': 'C$', 'INR': 'Rs.', 'EUR': 'EUR ', 'USD': '$', 'GBP': 'GBP ', 'MYR': 'RM'}
     curr = pdf_curr_map.get(invoice.get('currency', 'CAD'), '$')
     brand = user.get('brand_color', '#2563eb') or '#2563eb'
     # Convert hex to RGB
@@ -954,7 +958,7 @@ def admin_dashboard():
 
 # --- Helpers ---
 def get_curr_symbol(currency):
-    symbols = {'CAD': 'C$', 'INR': '₹', 'EUR': '€', 'USD': '$', 'GBP': '£'}
+    symbols = {'CAD': 'C$', 'INR': '₹', 'EUR': '€', 'USD': '$', 'GBP': '£', 'MYR': 'RM'}
     return symbols.get(currency, '$')
 
 def extract_brand_color(img_bytes):
