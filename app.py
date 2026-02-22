@@ -439,8 +439,9 @@ def api_register():
 
 # --- Dashboard ---
 @app.route('/')
-@login_required
 def dashboard():
+    if 'user_id' not in session:
+        return redirect('/welcome')
     user = get_user()
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
