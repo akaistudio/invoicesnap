@@ -175,7 +175,7 @@ def send_otp_email(email, code, purpose='login'):
         <div style="font-size:36px;font-weight:800;letter-spacing:8px;color:#1a1a2e;text-align:center;
                     padding:20px;background:#f0f4ff;border-radius:12px;margin:16px 0">{code}</div>
         <p style="color:#999;font-size:12px">This code expires in 5 minutes. Do not share it.</p>
-        <p style="color:#999;font-size:11px;margin-top:20px">Part of <a href="https://snapsuite.up.railway.app" style="color:#3b82f6">SnapSuite</a></p>
+        <p style="color:#999;font-size:11px;margin-top:20px">Part of <a href="https://snapsuite.up.railway.app" style="color:#3b82f6">Varnam Suite</a></p>
     </div>"""
     if not resend_key:
         print(f"⚠️ RESEND_API_KEY not set. OTP for {email}: {code}")
@@ -242,7 +242,7 @@ def get_tax_defaults(currency):
 @app.route('/demo')
 def demo_auto_login():
     conn = get_db(); cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("SELECT * FROM users WHERE email='demo@snapsuite.app'")
+    cur.execute("SELECT * FROM users WHERE email='demo@varnam.app'")
     user = cur.fetchone(); conn.close()
     if user:
         session['user_id'] = user['id']
@@ -1044,10 +1044,10 @@ def settings():
 
     return render_template('settings.html', user=user)
 
-# --- API for SnapSuite ---
+# --- API for Varnam Suite ---
 @app.route('/api/invoices')
 def api_invoices():
-    """API endpoint for SnapSuite to pull invoice data"""
+    """API endpoint for Varnam Suite to pull invoice data"""
     api_key = request.headers.get('X-API-Key')
     if not api_key:
         return jsonify({'error': 'API key required'}), 401
@@ -1219,9 +1219,9 @@ def seed_test_data():
 @app.route('/api/demo-setup', methods=['POST'])
 def demo_setup():
     secret = request.headers.get('X-Demo-Secret', '')
-    if secret != 'snapsuite-demo-2026': return jsonify({'error': 'Unauthorized'}), 403
+    if secret != 'varnam-demo-2026': return jsonify({'error': 'Unauthorized'}), 403
     conn = get_db(); cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    demo_email = 'demo@snapsuite.app'
+    demo_email = 'demo@varnam.app'
     cur.execute('SELECT * FROM users WHERE email=%s', (demo_email,))
     user = cur.fetchone()
     if not user:
