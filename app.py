@@ -1184,17 +1184,17 @@ def admin_dashboard():
 
     # View specific company's invoices
     company_id = request.args.get('company_id')
-    company_invoices = []
+    company_items = []
     selected_company = None
     if company_id:
         cur.execute('SELECT * FROM users WHERE id=%s', (company_id,))
         selected_company = cur.fetchone()
         cur.execute('SELECT * FROM invoices WHERE user_id=%s ORDER BY created_at DESC', (company_id,))
-        company_invoices = cur.fetchall()
+        company_items = cur.fetchall()
 
     conn.close()
     return render_template('admin.html', user=user, companies=companies,
-                         platform=platform, company_invoices=company_invoices,
+                         platform=platform, company_items=company_items,
                          selected_company=selected_company)
 
 # --- Helpers ---
