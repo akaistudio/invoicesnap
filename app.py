@@ -1147,7 +1147,7 @@ def api_invoices():
             elif hasattr(v, 'isoformat'):
                 inv[k] = v.isoformat()
 
-    return jsonify({'invoices': invoices, 'count': len(invoices)})
+    return jsonify({'invoices': invoices, 'count': len(invoices), 'currency': user.get('currency', '')})
 
 # --- Admin Dashboard (Super Admin only) ---
 @app.route('/admin')
@@ -1225,6 +1225,11 @@ def extract_brand_color(img_bytes):
         return f"#{most_common[0]:02x}{most_common[1]:02x}{most_common[2]:02x}"
     except Exception:
         return None
+
+
+@app.route('/health')
+def health():
+    return __import__('flask').jsonify({'status': 'ok', 'app': 'invoicesnap'})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
