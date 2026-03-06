@@ -311,18 +311,55 @@ def demo_auto_login():
 
 @app.route('/demo')
 def demo_login():
-    """One-click demo login."""
+    """One-click demo — shared Bloom Studio account, reseeds every 24h."""
+    from datetime import datetime, timedelta
     demo_email = 'demo@varnam.app'
     conn = get_db(); cur = conn.cursor()
+    # Ensure demo_reset_at column exists
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS demo_reset_at TIMESTAMP")
+        if not conn.autocommit: conn.commit()
+    except: pass
     cur.execute('SELECT * FROM users WHERE email=%s', (demo_email,))
     user = cur.fetchone()
+    needs_seed = False
     if not user:
-        cur.execute('INSERT INTO users (email, password_hash, company_name, currency, is_superadmin) VALUES (%s,%s,%s,%s,%s) RETURNING *',
-                   (demo_email, hash_pw('demo123'), 'Bloom Studio', 'INR', True))
+        cur.execute("""INSERT INTO users (email, password_hash, company_name, currency, tax_label, tax_rate,
+                       tax_label_2, tax_rate_2, is_superadmin, demo_reset_at)
+                       VALUES (%s,%s,'Bloom Studio','INR','CGST',9,'SGST',9,TRUE,NOW()) RETURNING *""",
+                   (demo_email, hash_pw('demo123')))
         user = cur.fetchone()
         if not conn.autocommit: conn.commit()
+        needs_seed = True
+    else:
+        last_reset = user.get('demo_reset_at')
+        if not last_reset or (datetime.utcnow() - last_reset.replace(tzinfo=None)) > timedelta(hours=24):
+            needs_seed = True
+    uid = user['id']
+    if needs_seed:
+        # Wipe existing demo data
+        cur.execute("DELETE FROM invoices WHERE user_id=%s", (uid,))
+        cur.execute("UPDATE users SET demo_reset_at=NOW() WHERE id=%s", (uid,))
+        # Reseed invoices
+        invs = [
+            ('INV-2026-101','Meridian Architects','2025-12-01','2025-12-31','paid',50000,4500,4500,59000,'Brand identity design'),
+            ('INV-2026-102','Zenith Foods Pvt Ltd','2025-12-15','2026-01-14','paid',120000,10800,10800,141600,'Website redesign + development'),
+            ('INV-2026-103','Priya Wellness Spa','2026-01-05','2026-02-04','paid',35000,3150,3150,41300,'Social media content pack'),
+            ('INV-2026-104','TechNova Solutions','2026-01-15','2026-02-14','unpaid',85000,7650,7650,100300,'Mobile app UI/UX design'),
+            ('INV-2026-105','Green Earth Organics','2026-01-20','2026-02-19','unpaid',28000,2520,2520,33040,'Packaging design - 5 SKUs'),
+            ('INV-2026-106','Meridian Architects','2026-02-01','2026-03-02','unpaid',75000,6750,6750,88500,'Office interior 3D renders'),
+            ('INV-2026-107','CloudFirst India','2025-11-01','2025-12-01','overdue',45000,4050,4050,53100,'Pitch deck + investor materials'),
+            ('INV-2026-108','Namaste Travels','2025-11-15','2025-12-15','overdue',22000,1980,1980,25960,'Travel brochure design'),
+        ]
+        for i in invs:
+            cur.execute("""INSERT INTO invoices (user_id,invoice_number,client_name,issue_date,due_date,status,
+                           subtotal,tax_1_label,tax_1_rate,tax_1_amount,tax_2_label,tax_2_rate,tax_2_amount,
+                           total,currency,notes,company_name)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,'CGST',9,%s,'SGST',9,%s,%s,'INR',%s,'Bloom Studio')""",
+                       (uid,i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7],i[8],i[9]))
+        if not conn.autocommit: conn.commit()
     session.clear()
-    session['user_id'] = user['id']
+    session['user_id'] = uid
     session.permanent = True
     conn.close()
     return redirect('/')
