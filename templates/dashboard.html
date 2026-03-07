@@ -116,9 +116,9 @@
             </div>
             {% if stats.count_partial > 0 %}
             <div class="stat-card partial">
-                <div class="label">Partial</div>
-                <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_partial - stats.total_partial_paid) }}</div>
-                <div class="sub">{{ stats.count_partial }} invoices · balance due</div>
+                <div class="label">PARTIAL</div>
+                <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_partial) }}</div>
+                <div class="sub">{{ stats.count_partial }} invoices · {{ curr }}{{ "{:,.0f}".format(stats.total_partial - stats.total_partial_paid) }} balance due</div>
             </div>
             {% endif %}
         </div>
