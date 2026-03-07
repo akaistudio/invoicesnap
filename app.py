@@ -358,7 +358,7 @@ def demo_login():
                            VALUES (%s,%s,%s,%s,%s,%s,%s,'CGST',9,%s,'SGST',9,%s,%s,'INR',%s,'Bloom Studio',0)
                            RETURNING id""",
                        (uid,i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7],i[8],i[9]))
-            inv_ids[i[0]] = cur.fetchone()[0]
+            inv_ids[i[0]] = cur.fetchone()['id']
         # Add partial payment records for INV-2026-109 (Sunrise Hospitality - 3 phases, 2 paid)
         cur.execute("INSERT INTO invoice_payments (invoice_id,user_id,amount,payment_date,note) VALUES (%s,%s,%s,%s,%s)",
                    (inv_ids['INV-2026-109'], uid, 70800, '2026-01-15', 'Phase 1 advance — NEFT'))
