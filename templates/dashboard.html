@@ -96,31 +96,24 @@
         <div class="stats">
             <div class="stat-card total">
                 <div class="label">Total Invoiced</div>
-                <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_value) }}</div>
+                <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_invoiced) }}</div>
                 <div class="sub">{{ stats.total_invoices }} invoices</div>
             </div>
             <div class="stat-card paid">
-                <div class="label">Paid</div>
-                <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_paid) }}</div>
-                <div class="sub">{{ stats.count_paid }} invoices</div>
+                <div class="label">Received</div>
+                <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_received) }}</div>
+                <div class="sub">payments recorded</div>
             </div>
             <div class="stat-card unpaid">
-                <div class="label">Unpaid</div>
-                <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_unpaid) }}</div>
-                <div class="sub">{{ stats.count_unpaid }} invoices</div>
+                <div class="label">Balance Due</div>
+                <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_balance) }}</div>
+                <div class="sub">outstanding</div>
             </div>
             <div class="stat-card overdue">
                 <div class="label">Overdue</div>
                 <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_overdue) }}</div>
-                <div class="sub">{{ stats.count_overdue }} invoices</div>
+                <div class="sub">{{ stats.count_overdue }} invoices past due</div>
             </div>
-            {% if stats.count_partial > 0 %}
-            <div class="stat-card partial">
-                <div class="label">PARTIAL</div>
-                <div class="value">{{ curr }}{{ "{:,.0f}".format(stats.total_partial) }}</div>
-                <div class="sub">{{ stats.count_partial }} invoices · {{ curr }}{{ "{:,.0f}".format(stats.total_partial - stats.total_partial_paid) }} balance due</div>
-            </div>
-            {% endif %}
         </div>
 
         <div class="section-header">

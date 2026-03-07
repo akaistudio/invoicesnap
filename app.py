@@ -586,16 +586,11 @@ def dashboard():
     # Summary stats
     cur.execute('''SELECT
         COUNT(*) as total_invoices,
-        COALESCE(SUM(total), 0) as total_value,
-        COALESCE(SUM(CASE WHEN status='paid' THEN total ELSE 0 END), 0) as total_paid,
-        COALESCE(SUM(CASE WHEN status='unpaid' THEN total ELSE 0 END), 0) as total_unpaid,
-        COALESCE(SUM(CASE WHEN status='overdue' THEN total ELSE 0 END), 0) as total_overdue,
-        COALESCE(SUM(CASE WHEN status='partial' THEN total ELSE 0 END), 0) as total_partial,
-        COALESCE(SUM(CASE WHEN status='partial' THEN amount_paid ELSE 0 END), 0) as total_partial_paid,
-        COUNT(CASE WHEN status='unpaid' THEN 1 END) as count_unpaid,
-        COUNT(CASE WHEN status='overdue' THEN 1 END) as count_overdue,
-        COUNT(CASE WHEN status='paid' THEN 1 END) as count_paid,
-        COUNT(CASE WHEN status='partial' THEN 1 END) as count_partial
+        COALESCE(SUM(total), 0) as total_invoiced,
+        COALESCE(SUM(amount_paid), 0) as total_received,
+        COALESCE(SUM(total) - SUM(amount_paid), 0) as total_balance,
+        COALESCE(SUM(CASE WHEN status='overdue' THEN total - amount_paid ELSE 0 END), 0) as total_overdue,
+        COUNT(CASE WHEN status='overdue' THEN 1 END) as count_overdue
     FROM invoices WHERE user_id=%s''', (user['id'],))
     stats = cur.fetchone()
 

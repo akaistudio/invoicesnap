@@ -125,18 +125,6 @@
             <div class="status-actions">
                 <span class="status {{ invoice.status }}">{{ invoice.status | capitalize }}</span>
                 <div class="action-btns">
-                    {% if invoice.status != 'paid' %}
-                    <form method="POST" action="/invoice/{{ invoice.id }}/status">
-                        <input type="hidden" name="status" value="paid">
-                        <button class="btn-sm green" type="submit">✓ Mark Fully Paid</button>
-                    </form>
-                    {% endif %}
-                    {% if invoice.status == 'paid' %}
-                    <form method="POST" action="/invoice/{{ invoice.id }}/status">
-                        <input type="hidden" name="status" value="unpaid">
-                        <button class="btn-sm" type="submit">↩ Mark Unpaid</button>
-                    </form>
-                    {% endif %}
                     <form method="POST" action="/invoice/{{ invoice.id }}/delete" onsubmit="return confirm('Delete this invoice?')">
                         <button class="btn-sm red" type="submit">🗑 Delete</button>
                     </form>
@@ -270,7 +258,7 @@
                     <div class="form-row">
                         <div class="form-field">
                             <label>Amount ({{ curr }})</label>
-                            <input type="number" name="amount" step="0.01" min="0.01" max="{{ balance }}" placeholder="0.00" required>
+                            <input type="number" name="amount" step="0.01" min="0.01" placeholder="0.00" required>
                         </div>
                         <div class="form-field">
                             <label>Payment Date</label>
