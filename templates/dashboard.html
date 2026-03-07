@@ -134,9 +134,8 @@
                     <tr>
                         <th>Invoice</th>
                         <th>Client</th>
-                        <th>Date</th>
-                        <th>Due</th>
                         <th>Amount</th>
+                        <th>Balance Due</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -144,11 +143,20 @@
                 <tbody>
                     {% for inv in invoices %}
                     <tr>
-                        <td><strong>{{ inv.invoice_number }}</strong></td>
+                        <td>
+                            <strong>{{ inv.invoice_number }}</strong>
+                            {% if inv.status == 'overdue' %}<br><span style="font-size:11px;color:#ef4444">Due {{ inv.due_date }}</span>{% endif %}
+                        </td>
                         <td>{{ inv.client_name }}</td>
-                        <td>{{ inv.issue_date }}</td>
-                        <td>{{ inv.due_date }}</td>
-                        <td><strong>{{ curr }}{{ "{:,.2f}".format(inv.total) }}</strong></td>
+                        <td><strong>{{ curr }}{{ "{:,.0f}".format(inv.total) }}</strong></td>
+                        <td>
+                            {% set bal = inv.total - (inv.amount_paid or 0) %}
+                            {% if bal <= 0 %}
+                            <span style="color:#22c55e">—</span>
+                            {% else %}
+                            <span style="color:{% if inv.status == 'overdue' %}#ef4444{% else %}#E8ECF4{% endif %}">{{ curr }}{{ "{:,.0f}".format(bal) }}</span>
+                            {% endif %}
+                        </td>
                         <td><span class="status {{ inv.status }}">{{ inv.status | capitalize }}</span></td>
                         <td class="actions">
                             <a href="/invoice/{{ inv.id }}">View</a> ·
