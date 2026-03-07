@@ -360,17 +360,15 @@ def demo_login():
                        (uid,i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7],i[8],i[9]))
             inv_ids[i[0]] = cur.fetchone()[0]
         # Add partial payment records for INV-2026-109 (Sunrise Hospitality - 3 phases, 2 paid)
-        cur.execute("""INSERT INTO invoice_payments (invoice_id,user_id,amount,payment_date,note) VALUES
-                       (%s,%s,70800,'2026-01-15','Phase 1 advance — NEFT'),
-                       (%s,%s,70800,'2026-02-01','Phase 2 milestone — NEFT')""",
-                   (inv_ids['INV-2026-109'], uid, inv_ids['INV-2026-109'], uid))
+        cur.execute("INSERT INTO invoice_payments (invoice_id,user_id,amount,payment_date,note) VALUES (%s,%s,%s,%s,%s)",
+                   (inv_ids['INV-2026-109'], uid, 70800, '2026-01-15', 'Phase 1 advance — NEFT'))
+        cur.execute("INSERT INTO invoice_payments (invoice_id,user_id,amount,payment_date,note) VALUES (%s,%s,%s,%s,%s)",
+                   (inv_ids['INV-2026-109'], uid, 70800, '2026-02-01', 'Phase 2 milestone — NEFT'))
         cur.execute("UPDATE invoices SET amount_paid=141600 WHERE id=%s", (inv_ids['INV-2026-109'],))
         # Add partial payment record for INV-2026-110 (BluePine - 50% advance)
-        cur.execute("""INSERT INTO invoice_payments (invoice_id,user_id,amount,payment_date,note) VALUES
-                       (%s,%s,56050,'2026-02-10','50%% advance — cheque #4821')""",
-                   (inv_ids['INV-2026-110'], uid))
+        cur.execute("INSERT INTO invoice_payments (invoice_id,user_id,amount,payment_date,note) VALUES (%s,%s,%s,%s,%s)",
+                   (inv_ids['INV-2026-110'], uid, 56050, '2026-02-10', '50% advance — cheque #4821'))
         cur.execute("UPDATE invoices SET amount_paid=56050 WHERE id=%s", (inv_ids['INV-2026-110'],))
-        if not conn.autocommit: conn.commit()
     session.clear()
     session['user_id'] = uid
     session.permanent = True
