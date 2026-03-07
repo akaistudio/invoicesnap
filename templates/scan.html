@@ -37,7 +37,25 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .flash { padding: 12px 16px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
         .flash.error { background: rgba(248,113,113,.1); color: #F87171; border: 1px solid rgba(248,113,113,.2); }
-    </style>
+    
+@media(max-width:768px){
+  .topbar{flex-wrap:wrap;gap:6px;padding:10px 14px!important}
+  .topbar-right{flex-wrap:wrap;gap:4px}
+  .topbar-right a{font-size:12px!important;padding:5px 8px!important}
+  .hide-mobile,.topbar-right a span.hide-mobile{display:none!important}
+  .main{padding:12px!important}
+  .stats{grid-template-columns:repeat(2,1fr)!important}
+  .stat-card{padding:14px!important}
+  .stat-card .value{font-size:22px!important}
+  .card{padding:16px!important;overflow-x:auto}
+  .table-wrap{overflow-x:auto!important}
+  table{min-width:480px}
+  th,td{padding:8px 10px!important;font-size:12px!important}
+  input,select,textarea{font-size:16px!important}
+  .g2,.g3,.row2,.row3,.grid-2,.grid-3{grid-template-columns:1fr!important}
+  form .row,form .row2,.form-row{grid-template-columns:1fr!important}
+}
+</style>
 </head>
 <body>
     <div class="topbar">
