@@ -8,7 +8,7 @@ import random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import requests as http_requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from functools import wraps
 from io import BytesIO
 
@@ -124,6 +124,16 @@ def init_db():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_superadmin BOOLEAN DEFAULT FALSE",
         "UPDATE users SET is_superadmin = TRUE WHERE id = (SELECT MIN(id) FROM users)",
         "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS company_name TEXT DEFAULT ''",
+        "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS amount_paid REAL DEFAULT 0",
+        """CREATE TABLE IF NOT EXISTS invoice_payments (
+            id SERIAL PRIMARY KEY,
+            invoice_id INTEGER REFERENCES invoices(id) ON DELETE CASCADE,
+            user_id INTEGER REFERENCES users(id),
+            amount REAL NOT NULL,
+            payment_date DATE NOT NULL,
+            note TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT NOW()
+        )""",
         """CREATE TABLE IF NOT EXISTS otp_codes (
             id SERIAL PRIMARY KEY,
             email TEXT NOT NULL,
@@ -563,9 +573,12 @@ def dashboard():
         COALESCE(SUM(CASE WHEN status='paid' THEN total ELSE 0 END), 0) as total_paid,
         COALESCE(SUM(CASE WHEN status='unpaid' THEN total ELSE 0 END), 0) as total_unpaid,
         COALESCE(SUM(CASE WHEN status='overdue' THEN total ELSE 0 END), 0) as total_overdue,
+        COALESCE(SUM(CASE WHEN status='partial' THEN total ELSE 0 END), 0) as total_partial,
+        COALESCE(SUM(CASE WHEN status='partial' THEN amount_paid ELSE 0 END), 0) as total_partial_paid,
         COUNT(CASE WHEN status='unpaid' THEN 1 END) as count_unpaid,
         COUNT(CASE WHEN status='overdue' THEN 1 END) as count_overdue,
-        COUNT(CASE WHEN status='paid' THEN 1 END) as count_paid
+        COUNT(CASE WHEN status='paid' THEN 1 END) as count_paid,
+        COUNT(CASE WHEN status='partial' THEN 1 END) as count_partial
     FROM invoices WHERE user_id=%s''', (user['id'],))
     stats = cur.fetchone()
 
@@ -829,26 +842,190 @@ def view_invoice(invoice_id):
         return redirect(url_for('dashboard'))
     cur.execute('SELECT * FROM invoice_items WHERE invoice_id=%s', (invoice_id,))
     items = cur.fetchall()
+    cur.execute('SELECT * FROM invoice_payments WHERE invoice_id=%s ORDER BY payment_date DESC', (invoice_id,))
+    payments = cur.fetchall()
     conn.close()
+    amount_paid = invoice.get('amount_paid') or 0
+    balance = invoice['total'] - amount_paid
     return render_template('view_invoice.html', user=user, invoice=invoice,
-                         items=items, curr=get_curr_symbol(invoice['currency']))
+                         items=items, curr=get_curr_symbol(invoice['currency']),
+                         payments=payments, amount_paid=amount_paid, balance=balance,
+                         today=date.today().isoformat())
 
-# --- Update Status ---
+# --- Record Payment ---
+@app.route('/invoice/<int:invoice_id>/payment', methods=['POST'])
+@login_required
+def record_payment(invoice_id):
+    user = get_user()
+    amount = float(request.form.get('amount', 0) or 0)
+    payment_date = request.form.get('payment_date')
+    note = request.form.get('note', '')
+    if amount <= 0:
+        flash('Payment amount must be greater than zero', 'error')
+        return redirect(url_for('view_invoice', invoice_id=invoice_id))
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT * FROM invoices WHERE id=%s AND user_id=%s', (invoice_id, user['id']))
+    invoice = cur.fetchone()
+    if not invoice:
+        conn.close()
+        flash('Invoice not found', 'error')
+        return redirect(url_for('dashboard'))
+    cur2 = conn.cursor()
+    cur2.execute('''INSERT INTO invoice_payments (invoice_id, user_id, amount, payment_date, note)
+                    VALUES (%s, %s, %s, %s, %s)''', (invoice_id, user['id'], amount, payment_date, note))
+    new_paid = (invoice['amount_paid'] or 0) + amount
+    if new_paid >= invoice['total']:
+        new_paid = invoice['total']
+        new_status = 'paid'
+        cur2.execute('''UPDATE invoices SET amount_paid=%s, status=%s, paid_at=NOW()
+                        WHERE id=%s AND user_id=%s''', (new_paid, new_status, invoice_id, user['id']))
+    else:
+        new_status = 'partial'
+        cur2.execute('''UPDATE invoices SET amount_paid=%s, status=%s
+                        WHERE id=%s AND user_id=%s''', (new_paid, new_status, invoice_id, user['id']))
+    conn.commit()
+    conn.close()
+    flash(f'Payment of {amount:,.2f} recorded. Status: {new_status.capitalize()}', 'success')
+    return redirect(url_for('view_invoice', invoice_id=invoice_id))
+
+# --- Delete Payment ---
+@app.route('/invoice/payment/<int:payment_id>/delete', methods=['POST'])
+@login_required
+def delete_payment(payment_id):
+    user = get_user()
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT * FROM invoice_payments WHERE id=%s AND user_id=%s', (payment_id, user['id']))
+    pmt = cur.fetchone()
+    if not pmt:
+        conn.close()
+        flash('Payment not found', 'error')
+        return redirect(url_for('dashboard'))
+    invoice_id = pmt['invoice_id']
+    cur2 = conn.cursor()
+    cur2.execute('DELETE FROM invoice_payments WHERE id=%s AND user_id=%s', (payment_id, user['id']))
+    # Recalculate amount_paid from remaining payments
+    cur.execute('SELECT COALESCE(SUM(amount),0) as total FROM invoice_payments WHERE invoice_id=%s AND user_id=%s', (invoice_id, user['id']))
+    new_paid = cur.fetchone()['total']
+    cur.execute('SELECT total FROM invoices WHERE id=%s', (invoice_id,))
+    inv_total = cur.fetchone()['total']
+    if new_paid <= 0:
+        new_status = 'unpaid'
+        cur2.execute("UPDATE invoices SET amount_paid=0, status='unpaid', paid_at=NULL WHERE id=%s AND user_id=%s", (invoice_id, user['id']))
+    elif new_paid >= inv_total:
+        new_status = 'paid'
+        cur2.execute("UPDATE invoices SET amount_paid=%s, status='paid', paid_at=NOW() WHERE id=%s AND user_id=%s", (new_paid, invoice_id, user['id']))
+    else:
+        new_status = 'partial'
+        cur2.execute("UPDATE invoices SET amount_paid=%s, status='partial', paid_at=NULL WHERE id=%s AND user_id=%s", (new_paid, invoice_id, user['id']))
+    conn.commit()
+    conn.close()
+    flash('Payment entry removed', 'success')
+    return redirect(url_for('view_invoice', invoice_id=invoice_id))
+
+# --- Update Status (full paid/unpaid toggle) ---
 @app.route('/invoice/<int:invoice_id>/status', methods=['POST'])
 @login_required
 def update_status(invoice_id):
     user = get_user()
     new_status = request.form['status']
     conn = get_db()
-    cur = conn.cursor()
-    paid_at = 'NOW()' if new_status == 'paid' else 'NULL'
-    cur.execute(f'''UPDATE invoices SET status=%s, paid_at={paid_at}
-                   WHERE id=%s AND user_id=%s''', (new_status, invoice_id, user['id']))
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT total FROM invoices WHERE id=%s AND user_id=%s', (invoice_id, user['id']))
+    inv = cur.fetchone()
+    cur2 = conn.cursor()
+    if new_status == 'paid':
+        # Clear any partial payments and mark fully paid
+        cur2.execute('DELETE FROM invoice_payments WHERE invoice_id=%s AND user_id=%s', (invoice_id, user['id']))
+        cur2.execute('''UPDATE invoices SET status=%s, amount_paid=total, paid_at=NOW()
+                        WHERE id=%s AND user_id=%s''', (new_status, invoice_id, user['id']))
+    else:
+        cur2.execute('DELETE FROM invoice_payments WHERE invoice_id=%s AND user_id=%s', (invoice_id, user['id']))
+        cur2.execute('''UPDATE invoices SET status=%s, amount_paid=0, paid_at=NULL
+                        WHERE id=%s AND user_id=%s''', (new_status, invoice_id, user['id']))
+    conn.commit()
     conn.close()
     flash(f'Invoice marked as {new_status}', 'success')
     return redirect(url_for('view_invoice', invoice_id=invoice_id))
 
-# --- Delete Invoice ---
+# --- Record Payment ---
+@app.route('/invoice/<int:invoice_id>/payment', methods=['POST'])
+@login_required
+def record_payment(invoice_id):
+    user = get_user()
+    amount = float(request.form.get('amount', 0) or 0)
+    payment_date = request.form.get('payment_date') or date.today().isoformat()
+    note = request.form.get('note', '')
+    if amount <= 0:
+        flash('Please enter a valid amount', 'error')
+        return redirect(url_for('view_invoice', invoice_id=invoice_id))
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT * FROM invoices WHERE id=%s AND user_id=%s', (invoice_id, user['id']))
+    invoice = cur.fetchone()
+    if not invoice:
+        conn.close()
+        flash('Invoice not found', 'error')
+        return redirect(url_for('dashboard'))
+    cur2 = conn.cursor()
+    cur2.execute('''INSERT INTO invoice_payments (invoice_id, user_id, amount, payment_date, note)
+                   VALUES (%s, %s, %s, %s, %s)''', (invoice_id, user['id'], amount, payment_date, note))
+    new_paid = (invoice.get('amount_paid') or 0) + amount
+    if new_paid >= invoice['total']:
+        new_paid = invoice['total']
+        new_status = 'paid'
+        cur2.execute("UPDATE invoices SET amount_paid=%s, status='paid', paid_at=NOW() WHERE id=%s AND user_id=%s",
+                     (new_paid, invoice_id, user['id']))
+    else:
+        new_status = 'partial'
+        cur2.execute("UPDATE invoices SET amount_paid=%s, status='partial' WHERE id=%s AND user_id=%s",
+                     (new_paid, invoice_id, user['id']))
+    conn.commit()
+    conn.close()
+    flash(f'Payment recorded. Invoice is now {new_status}.', 'success')
+    return redirect(url_for('view_invoice', invoice_id=invoice_id))
+
+# --- Delete Payment ---
+@app.route('/invoice/<int:invoice_id>/payment/<int:payment_id>/delete', methods=['POST'])
+@login_required
+def delete_payment(invoice_id, payment_id):
+    user = get_user()
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute('SELECT * FROM invoice_payments WHERE id=%s AND user_id=%s', (payment_id, user['id']))
+    pmt = cur.fetchone()
+    if not pmt:
+        conn.close()
+        flash('Payment not found', 'error')
+        return redirect(url_for('view_invoice', invoice_id=invoice_id))
+    cur2 = conn.cursor()
+    cur2.execute('DELETE FROM invoice_payments WHERE id=%s AND user_id=%s', (payment_id, user['id']))
+    # Recalculate amount_paid from remaining payments
+    cur.execute('SELECT COALESCE(SUM(amount),0) as total FROM invoice_payments WHERE invoice_id=%s AND user_id=%s AND id!=%s',
+                (invoice_id, user['id'], payment_id))
+    row = cur.fetchone()
+    new_paid = row['total']
+    cur.execute('SELECT total FROM invoices WHERE id=%s AND user_id=%s', (invoice_id, user['id']))
+    inv = cur.fetchone()
+    if new_paid <= 0:
+        new_status = 'unpaid'
+        cur2.execute("UPDATE invoices SET amount_paid=0, status='unpaid', paid_at=NULL WHERE id=%s AND user_id=%s",
+                     (invoice_id, user['id']))
+    elif new_paid >= inv['total']:
+        new_status = 'paid'
+        cur2.execute("UPDATE invoices SET amount_paid=%s, status='paid', paid_at=NOW() WHERE id=%s AND user_id=%s",
+                     (new_paid, invoice_id, user['id']))
+    else:
+        new_status = 'partial'
+        cur2.execute("UPDATE invoices SET amount_paid=%s, status='partial', paid_at=NULL WHERE id=%s AND user_id=%s",
+                     (new_paid, invoice_id, user['id']))
+    conn.commit()
+    conn.close()
+    flash('Payment removed and balance updated.', 'success')
+    return redirect(url_for('view_invoice', invoice_id=invoice_id))
+
+
 @app.route('/invoice/<int:invoice_id>/delete', methods=['POST'])
 @login_required
 def delete_invoice(invoice_id):

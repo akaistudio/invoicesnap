@@ -25,6 +25,27 @@
         .status.paid { background: #dcfce7; color: #4ADE80; }
         .status.unpaid { background: #fef9c3; color: #a16207; }
         .status.overdue { background: #fee2e2; color: #F87171; }
+        .status.partial { background: #dbeafe; color: #3B82F6; }
+        .payments-section { margin-top: 24px; }
+        .payments-section h3 { font-size: 15px; font-weight: 700; color: #E8ECF4; margin-bottom: 14px; }
+        .balance-bar { background: #141926; border: 1px solid #2A3148; border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; display: flex; gap: 24px; flex-wrap: wrap; }
+        .balance-item .bal-label { font-size: 11px; font-weight: 700; color: #8B95B0; text-transform: uppercase; }
+        .balance-item .bal-value { font-size: 18px; font-weight: 700; color: #E8ECF4; margin-top: 2px; }
+        .balance-item .bal-value.green { color: #4ADE80; }
+        .balance-item .bal-value.blue { color: #3B82F6; }
+        .balance-item .bal-value.red { color: #F87171; }
+        .record-form { background: #141926; border: 1px solid #2A3148; border-radius: 10px; padding: 18px 20px; margin-bottom: 16px; }
+        .record-form h4 { font-size: 13px; font-weight: 700; color: #E8ECF4; margin-bottom: 12px; }
+        .form-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+        .form-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 120px; }
+        .form-field label { font-size: 11px; font-weight: 600; color: #8B95B0; text-transform: uppercase; }
+        .form-field input { padding: 8px 10px; background: #0B0F1A; border: 1px solid #2A3148; border-radius: 8px; color: #E8ECF4; font-size: 14px; font-family: 'DM Sans', sans-serif; }
+        .form-field input:focus { outline: none; border-color: #3B82F6; }
+        .pmt-list { display: flex; flex-direction: column; gap: 8px; }
+        .pmt-row { display: flex; justify-content: space-between; align-items: center; background: #141926; border: 1px solid #2A3148; border-radius: 8px; padding: 10px 14px; font-size: 13px; }
+        .pmt-row .pmt-amount { font-weight: 700; color: #4ADE80; }
+        .pmt-row .pmt-date { color: #8B95B0; }
+        .pmt-row .pmt-note { color: #8B95B0; font-style: italic; }
         .action-btns { display: flex; gap: 8px; }
         .action-btns form { display: inline; }
         .btn-sm { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid #2A3148; background: #141926; color: #E8ECF4; font-family: 'DM Sans', sans-serif; text-decoration: none; }
@@ -107,7 +128,7 @@
                     {% if invoice.status != 'paid' %}
                     <form method="POST" action="/invoice/{{ invoice.id }}/status">
                         <input type="hidden" name="status" value="paid">
-                        <button class="btn-sm green" type="submit">✓ Mark Paid</button>
+                        <button class="btn-sm green" type="submit">✓ Mark Fully Paid</button>
                     </form>
                     {% endif %}
                     {% if invoice.status == 'paid' %}
@@ -221,6 +242,68 @@
                 <h4>Payment Details</h4>
                 <p>{{ user.bank_details | replace('\n', '<br>') | safe }}</p>
             </div>
+            {% endif %}
+        </div>
+
+        <!-- Payment Tracking -->
+        <div class="payments-section">
+            <h3>💳 Payment Tracking</h3>
+            <div class="balance-bar">
+                <div class="balance-item">
+                    <div class="bal-label">Invoice Total</div>
+                    <div class="bal-value">{{ curr }}{{ "%.2f"|format(invoice.total) }}</div>
+                </div>
+                <div class="balance-item">
+                    <div class="bal-label">Amount Received</div>
+                    <div class="bal-value green">{{ curr }}{{ "%.2f"|format(amount_paid) }}</div>
+                </div>
+                <div class="balance-item">
+                    <div class="bal-label">Balance Due</div>
+                    <div class="bal-value {% if balance <= 0 %}green{% else %}red{% endif %}">{{ curr }}{{ "%.2f"|format(balance if balance > 0 else 0) }}</div>
+                </div>
+            </div>
+
+            {% if invoice.status != 'paid' %}
+            <div class="record-form">
+                <h4>+ Record a Payment</h4>
+                <form method="POST" action="/invoice/{{ invoice.id }}/payment">
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label>Amount ({{ curr }})</label>
+                            <input type="number" name="amount" step="0.01" min="0.01" max="{{ balance }}" placeholder="0.00" required>
+                        </div>
+                        <div class="form-field">
+                            <label>Payment Date</label>
+                            <input type="date" name="payment_date" value="{{ today }}">
+                        </div>
+                        <div class="form-field" style="flex:2">
+                            <label>Note (optional)</label>
+                            <input type="text" name="note" placeholder="e.g. Bank transfer, Cheque #123">
+                        </div>
+                        <button type="submit" class="btn-sm green" style="white-space:nowrap;margin-bottom:1px">Record</button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+
+            {% if payments %}
+            <div class="pmt-list">
+                {% for p in payments %}
+                <div class="pmt-row">
+                    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+                        <span class="pmt-amount">+ {{ curr }}{{ "%.2f"|format(p.amount) }}</span>
+                        <span class="pmt-date">{{ p.payment_date }}</span>
+                        {% if p.note %}<span class="pmt-note">{{ p.note }}</span>{% endif %}
+                    </div>
+                    <form method="POST" action="/invoice/{{ invoice.id }}/payment/{{ p.id }}/delete"
+                          onsubmit="return confirm('Remove this payment? Balance will be recalculated.')">
+                        <button type="submit" style="background:none;border:none;color:#ef4444;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Remove</button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color:#8B95B0;font-size:13px">No payments recorded yet.</p>
             {% endif %}
         </div>
     </div>
