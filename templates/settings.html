@@ -38,7 +38,14 @@
         .actions { display: flex; justify-content: flex-end; }
         .tax-preset { display: inline-block; padding: 4px 10px; background: #2A3148; color: #8B95B0; font-size: 12px; border-radius: 6px; cursor: pointer; margin-right: 6px; margin-top: 6px; }
         .tax-preset:hover { background: #2A3148; color: #E8ECF4; }
-        @media (max-width: 768px) { .row, .row-3 { grid-template-columns: 1fr; } }
+        @media(max-width:768px){
+            .row,.row-3{grid-template-columns:1fr}
+            .topbar{flex-wrap:wrap;gap:6px;padding:10px 14px}
+            .topbar a{font-size:12px;padding:5px 8px}
+            .main{padding:12px}
+            .card{padding:16px}
+            input,select,textarea{font-size:16px!important}
+        }
     </style>
 </head>
 <body>

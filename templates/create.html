@@ -53,15 +53,22 @@
         .client-suggest div { padding: 10px 12px; cursor: pointer; font-size: 14px; }
         .client-suggest div:hover { background: #2A3148; }
         .client-wrapper { position: relative; }
-        @media (max-width: 768px) {
-            .row { grid-template-columns: 1fr; }
-            .items-table thead { display: none; }
-            .items-table tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; padding: 12px 0; border-bottom: 1px solid #1C2433; }
-            .items-table td { padding: 2px 0; }
-            .items-table td:first-child { grid-column: 1 / -1; }
-            .items-table td:last-child { grid-column: 1 / -1; text-align: right; }
-            .items-table input { padding: 10px 12px; font-size: 16px; }
-            .items-table td::before { content: attr(data-label); display: block; font-size: 10px; font-weight: 700; color: #8B95B0; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+        @media(max-width:768px){
+            .row{grid-template-columns:1fr}
+            .topbar{flex-wrap:wrap;gap:6px;padding:10px 14px}
+            .topbar a{font-size:12px;padding:5px 8px}
+            .main{padding:12px}
+            .card{padding:16px}
+            .actions{flex-wrap:wrap;gap:8px}
+            .actions button{flex:1;min-width:120px}
+            input,select,textarea{font-size:16px!important}
+            .items-table thead{display:none}
+            .items-table tr{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;padding:12px 0;border-bottom:1px solid #1C2433}
+            .items-table td{padding:2px 0}
+            .items-table td:first-child{grid-column:1 / -1}
+            .items-table td:last-child{grid-column:1 / -1;text-align:right}
+            .items-table input{padding:10px 12px;font-size:16px}
+            .items-table td::before{content:attr(data-label);display:block;font-size:10px;font-weight:700;color:#8B95B0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
         }
     </style>
 </head>
