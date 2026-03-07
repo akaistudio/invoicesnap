@@ -675,7 +675,7 @@ def create_invoice():
                     issue_date, due_date, subtotal, tax_1_label, tax_1_rate, tax_1_amount,
                     tax_2_label, tax_2_rate, tax_2_amount, discount_percent, discount_amount,
                     total, user['currency'], notes, 'manual'))
-        invoice_id = cur.fetchone()[0]
+        invoice_id = cur.fetchone()['id']
 
         # Save line items
         for desc, qty, price, amount in items:
@@ -833,7 +833,7 @@ def save_scanned():
                 tax_2_label, tax_2_rate, tax_2_amount, 0,
                 float(data.get('discount', 0)), total, data.get('currency', user['currency']),
                 data.get('notes', ''), 'scanned'))
-    invoice_id = cur.fetchone()[0]
+    invoice_id = cur.fetchone()['id']
 
     for item in data.get('items', []):
         cur.execute('''INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, amount)
