@@ -301,35 +301,23 @@ def auto_login():
 
 @app.route('/demo')
 def demo_login():
-    """One-click demo — shared Bloom Studio account, reseeds every 24h."""
-    from datetime import datetime, timedelta
+    """One-click demo — shared Bloom Studio account. Seed on first visit only."""
     demo_email = 'demo@varnam.app'
     conn = get_db(); cur = conn.cursor()
-    # Ensure demo_reset_at column exists
-    try:
-        cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS demo_reset_at TIMESTAMP")
-        if not conn.autocommit: conn.commit()
-    except: pass
     cur.execute('SELECT * FROM users WHERE email=%s', (demo_email,))
     user = cur.fetchone()
     needs_seed = False
     if not user:
         cur.execute("""INSERT INTO users (email, password_hash, company_name, currency, tax_label, tax_rate,
-                       tax_label_2, tax_rate_2, is_superadmin, demo_reset_at)
-                       VALUES (%s,%s,'Bloom Studio','INR','CGST',9,'SGST',9,TRUE,NOW()) RETURNING *""",
+                       tax_label_2, tax_rate_2, is_superadmin)
+                       VALUES (%s,%s,'Bloom Studio','INR','CGST',9,'SGST',9,TRUE) RETURNING *""",
                    (demo_email, hash_pw('demo123')))
         user = cur.fetchone()
         if not conn.autocommit: conn.commit()
         needs_seed = True
-    else:
-        last_reset = user.get('demo_reset_at')
-        if not last_reset or (datetime.utcnow() - last_reset.replace(tzinfo=None)) > timedelta(hours=24):
-            needs_seed = True
     uid = user['id']
     if needs_seed:
-        # Wipe existing demo data
         cur.execute("DELETE FROM invoices WHERE user_id=%s", (uid,))
-        cur.execute("UPDATE users SET demo_reset_at=NOW() WHERE id=%s", (uid,))
         # Reseed invoices
         invs = [
             ('INV-2026-101','Meridian Architects','2025-12-01','2025-12-31','paid',50000,4500,4500,59000,'Brand identity design'),
