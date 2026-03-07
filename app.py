@@ -599,6 +599,11 @@ def dashboard():
                    WHERE user_id=%s AND status='unpaid' AND due_date < CURRENT_DATE''',
                 (user['id'],))
 
+    # Backfill: paid invoices with amount_paid=0 were marked paid before payment tracking existed
+    cur.execute('''UPDATE invoices SET amount_paid=total
+                   WHERE user_id=%s AND status='paid' AND (amount_paid IS NULL OR amount_paid=0)''',
+                (user['id'],))
+
     conn.close()
 
     # Currency symbols
