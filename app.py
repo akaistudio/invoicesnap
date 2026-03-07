@@ -883,19 +883,24 @@ def record_payment(invoice_id):
         conn.close()
         flash('Invoice not found', 'error')
         return redirect(url_for('dashboard'))
+    current_paid = invoice.get('amount_paid') or 0
+    balance = invoice['total'] - current_paid
+    if amount > balance:
+        conn.close()
+        flash(f'Amount exceeds balance due ({get_curr_symbol(invoice["currency"])}{balance:,.2f}). Enter a smaller amount.', 'error')
+        return redirect(url_for('view_invoice', invoice_id=invoice_id))
     cur2 = conn.cursor()
     cur2.execute('''INSERT INTO invoice_payments (invoice_id, user_id, amount, payment_date, note)
                    VALUES (%s, %s, %s, %s, %s)''', (invoice_id, user['id'], amount, payment_date, note))
-    new_paid = (invoice.get('amount_paid') or 0) + amount
+    new_paid = current_paid + amount
     if new_paid >= invoice['total']:
-        new_paid = invoice['total']
-        new_status = 'paid'
         cur2.execute("UPDATE invoices SET amount_paid=%s, status='paid', paid_at=NOW() WHERE id=%s AND user_id=%s",
                      (new_paid, invoice_id, user['id']))
+        new_status = 'paid'
     else:
-        new_status = 'partial'
         cur2.execute("UPDATE invoices SET amount_paid=%s, status='partial' WHERE id=%s AND user_id=%s",
                      (new_paid, invoice_id, user['id']))
+        new_status = 'partial'
     conn.commit()
     conn.close()
     flash(f'Payment recorded. Invoice is now {new_status}.', 'success')
