@@ -333,6 +333,7 @@ def demo_login():
         needs_seed = True
     uid = user['id']
     if needs_seed:
+        cur.execute("DELETE FROM invoice_payments WHERE user_id=%s", (uid,))
         cur.execute("DELETE FROM invoices WHERE user_id=%s", (uid,))
         # Reseed invoices
         invs = [
@@ -344,13 +345,29 @@ def demo_login():
             ('INV-2026-106','Meridian Architects','2026-02-01','2026-03-02','unpaid',75000,6750,6750,88500,'Office interior 3D renders'),
             ('INV-2026-107','CloudFirst India','2025-11-01','2025-12-01','overdue',45000,4050,4050,53100,'Pitch deck + investor materials'),
             ('INV-2026-108','Namaste Travels','2025-11-15','2025-12-15','overdue',22000,1980,1980,25960,'Travel brochure design'),
+            ('INV-2026-109','Sunrise Hospitality','2026-01-10','2026-02-09','partial',180000,16200,16200,212400,'Hotel brand + collateral (3-phase project)'),
+            ('INV-2026-110','BluePine Retail','2026-02-05','2026-03-06','partial',95000,8550,8550,112100,'E-commerce UX redesign'),
         ]
+        inv_ids = {}
         for i in invs:
             cur.execute("""INSERT INTO invoices (user_id,invoice_number,client_name,issue_date,due_date,status,
                            subtotal,tax_1_label,tax_1_rate,tax_1_amount,tax_2_label,tax_2_rate,tax_2_amount,
-                           total,currency,notes,company_name)
-                           VALUES (%s,%s,%s,%s,%s,%s,%s,'CGST',9,%s,'SGST',9,%s,%s,'INR',%s,'Bloom Studio')""",
+                           total,currency,notes,company_name,amount_paid)
+                           VALUES (%s,%s,%s,%s,%s,%s,%s,'CGST',9,%s,'SGST',9,%s,%s,'INR',%s,'Bloom Studio',0)
+                           RETURNING id""",
                        (uid,i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7],i[8],i[9]))
+            inv_ids[i[0]] = cur.fetchone()[0]
+        # Add partial payment records for INV-2026-109 (Sunrise Hospitality - 3 phases, 2 paid)
+        cur.execute("""INSERT INTO invoice_payments (invoice_id,user_id,amount,payment_date,note) VALUES
+                       (%s,%s,70800,'2026-01-15','Phase 1 advance — NEFT'),
+                       (%s,%s,70800,'2026-02-01','Phase 2 milestone — NEFT')""",
+                   (inv_ids['INV-2026-109'], uid, inv_ids['INV-2026-109'], uid))
+        cur.execute("UPDATE invoices SET amount_paid=141600 WHERE id=%s", (inv_ids['INV-2026-109'],))
+        # Add partial payment record for INV-2026-110 (BluePine - 50% advance)
+        cur.execute("""INSERT INTO invoice_payments (invoice_id,user_id,amount,payment_date,note) VALUES
+                       (%s,%s,56050,'2026-02-10','50%% advance — cheque #4821')""",
+                   (inv_ids['INV-2026-110'], uid))
+        cur.execute("UPDATE invoices SET amount_paid=56050 WHERE id=%s", (inv_ids['INV-2026-110'],))
         if not conn.autocommit: conn.commit()
     session.clear()
     session['user_id'] = uid
