@@ -149,8 +149,9 @@ def init_db():
     for m in migrations:
         try:
             cur.execute(m)
+            conn.commit()
         except Exception:
-            pass
+            conn.rollback()
     conn.close()
 
 init_db()
