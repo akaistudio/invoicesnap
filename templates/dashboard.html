@@ -48,21 +48,18 @@
         .empty a { display: inline-block; padding: 10px 20px; background: #3B82F6; color: #fff; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px; }
         .actions a { color: #3B82F6; text-decoration: none; font-weight: 500; font-size: 13px; }
         .actions a:hover { text-decoration: underline; }
-                @media (max-width: 768px) {
-            .stats { grid-template-columns: repeat(2, 1fr); }
+        @media(max-width:768px){
+            .stats{grid-template-columns:repeat(2,1fr)}
             .topbar{flex-wrap:wrap;gap:6px;padding:10px 14px}
             .topbar-right{flex-wrap:wrap;gap:4px}
             .topbar-right a{font-size:12px;padding:5px 8px}
-            .topbar-right a span.hide-mobile { display: none; }
-            .main { padding: 12px; }
-            .invoice-table,.card { overflow-x: auto; }
-            table{min-width:480px}
+            .topbar-right a span.hide-mobile{display:none}
+            .main{padding:12px}
+            .invoice-table,.card{overflow-x:auto}
+            table{min-width:500px}
             th,td{padding:8px 10px;font-size:12px}
             input,select,textarea{font-size:16px!important}
-        }
-            .topbar-right a span.hide-mobile { display: none; }
-            .main { padding: 16px; }
-            .invoice-table { overflow-x: auto; }
+            .actions-bar{flex-wrap:wrap;gap:8px}
         }
     </style>
 </head>
