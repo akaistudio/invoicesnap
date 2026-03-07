@@ -295,7 +295,7 @@
                         <span class="pmt-date">{{ p.payment_date }}</span>
                         {% if p.note %}<span class="pmt-note">{{ p.note }}</span>{% endif %}
                     </div>
-                    <form method="POST" action="/invoice/payment/{{ p.id }}/delete"
+                    <form method="POST" action="/invoice/{{ invoice.id }}/payment/{{ p.id }}/delete"
                           onsubmit="return confirm('Remove this payment? Balance will be recalculated.')">
                         <button type="submit" style="background:none;border:none;color:#ef4444;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif">Remove</button>
                     </form>
